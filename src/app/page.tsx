@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence, useInView } from "framer-motion";
 import Lenis from "lenis";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Command } from "cmdk";
@@ -23,6 +23,171 @@ function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
   }, []);
   return <>{children}</>;
 }
+
+// ========== ANIMATED GLOW BORDER ==========
+const GlowBorder = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
+  return (
+    <div className={`relative group ${className}`}>
+      <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 opacity-75 blur-md animate-glow-spin group-hover:opacity-100 transition duration-500" />
+      <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 opacity-100 blur-md animate-glow-spin-reverse group-hover:blur-xl transition duration-500" style={{ filter: "blur(12px)" }} />
+      <div className="relative rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 overflow-hidden z-10">
+        {children}
+      </div>
+      <style jsx>{`
+        @keyframes glow-spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes glow-spin-reverse {
+          0% { transform: rotate(360deg); }
+          100% { transform: rotate(0deg); }
+        }
+        .animate-glow-spin {
+          animation: glow-spin 4s linear infinite;
+        }
+        .animate-glow-spin-reverse {
+          animation: glow-spin-reverse 4s linear infinite;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// ========== 3D TEXT COMPONENT ==========
+const ThreeDText = ({ 
+  children, 
+  variant = "extrude", 
+  className = "",
+  as: Component = "h2"
+}: { 
+  children: React.ReactNode; 
+  variant?: "extrude" | "neon" | "floating" | "rotating" | "kinetic";
+  className?: string;
+  as?: keyof JSX.IntrinsicElements;
+}) => {
+  const MotionComponent = motion(Component);
+  
+  const variants = {
+    extrude: {
+      style: {
+        textShadow: "0 1px 0 #000, 0 2px 0 #000, 0 3px 0 #000, 0 4px 0 #000, 0 5px 0 #000, 0 6px 0 #000, 0 7px 0 #000, 0 8px 0 #000",
+        transform: "translateY(-2px)",
+      },
+      animate: { y: [0, -2, 0] },
+      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+    },
+    neon: {
+      style: {
+        textShadow: "0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00bfff",
+        animation: "pulse 2s ease-in-out infinite",
+      },
+      animate: { opacity: [0.9, 1, 0.9] },
+      transition: { duration: 1.5, repeat: Infinity }
+    },
+    floating: {
+      animate: { y: [0, -15, 0] },
+      transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+      style: { display: "inline-block" }
+    },
+    rotating: {
+      animate: { rotateX: [0, 15, 0], rotateY: [0, 360, 0] },
+      transition: { duration: 8, repeat: Infinity, ease: "linear" },
+      style: { display: "inline-block", transformStyle: "preserve-3d" }
+    },
+    kinetic: {
+      animate: { scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] },
+      transition: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+      style: { display: "inline-block" }
+    }
+  };
+  
+  const config = variants[variant] || variants.extrude;
+  
+  return (
+    <MotionComponent
+      className={`font-black tracking-tight bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent ${className}`}
+      animate={config.animate}
+      transition={config.transition}
+      style={config.style}
+    >
+      {children}
+    </MotionComponent>
+  );
+};
+
+// ========== PARALLAX BLUR REVEAL ==========
+const ParallaxBlurReveal = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: false, margin: "-100px 0px -100px 0px" });
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  });
+  const blur = useTransform(scrollYProgress, [0, 0.5, 1], [8, 0, 8]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.3, 1, 1, 0.3]);
+  
+  return (
+    <motion.div
+      ref={ref}
+      style={{ filter: isInView ? `blur(0px)` : `blur(${blur.get()}px)`, opacity }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+// ========== SCROLL LINKED ANIMATION ==========
+const ScrollLinkedCounter = () => {
+  const { scrollYProgress } = useScroll();
+  const [section, setSection] = useState("Hero");
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.on("change", (latest) => {
+      if (latest < 0.1) setSection("FULLSTACK");
+      else if (latest < 0.25) setSection("About");
+      else if (latest < 0.4) setSection("Tech Stack");
+      else if (latest < 0.55) setSection("Experience");
+      else if (latest < 0.7) setSection("Projects");
+      else if (latest < 0.85) setSection("Reviews");
+      else setSection("Contact");
+    });
+    return () => unsubscribe();
+  }, [scrollYProgress]);
+  
+  return (
+    <motion.div 
+      className="fixed bottom-6 right-6 z-50 glass-card px-4 py-2 rounded-full text-sm font-mono border border-cyan-400/30 backdrop-blur-xl"
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 1 }}
+    >
+      <span className="text-cyan-400">Currently viewing:</span> {section}
+    </motion.div>
+  );
+};
+
+// ========== APPLE STYLE SCROLL CARD ==========
+const AppleStyleCard = ({ children, index }: { children: React.ReactNode; index: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  });
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 0.8]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.4, 1, 1, 0.4]);
+  const y = useTransform(scrollYProgress, [0, 0.5, 1], [50, 0, -50]);
+  
+  return (
+    <motion.div
+      ref={ref}
+      style={{ scale, opacity, y }}
+      transition={{ type: "spring", stiffness: 100 }}
+      className="w-full"
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 // ========== COMMAND MENU ==========
 const CommandMenu = () => {
@@ -262,6 +427,8 @@ const HeroSectionFull = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { scrollYProgress } = useScroll();
   const yParallax = useTransform(scrollYProgress, [0, 1], [0, -200]);
+  const scaleParallax = useTransform(scrollYProgress, [0, 0.5], [1, 1.2]);
+  const blurParallax = useTransform(scrollYProgress, [0, 0.5], [0, 5]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => setMousePosition({ x: e.clientX, y: e.clientY });
@@ -275,20 +442,15 @@ const HeroSectionFull = () => {
         className="pointer-events-none fixed inset-0 z-30 transition duration-500"
         style={{ background: `radial-gradient(800px at ${mousePosition.x}px ${mousePosition.y}px, rgba(0,191,255,0.15), transparent 70%)` }}
       />
-      <motion.div style={{ y: yParallax }} className="relative z-10 text-center max-w-6xl mx-auto">
+      <motion.div style={{ y: yParallax, scale: scaleParallax, filter: blurParallax }} className="relative z-10 text-center max-w-6xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: cinematicEase }}>
           <span className="text-cyan-400 text-sm md:text-base font-mono tracking-wider">✦ BUILDING SCALABLE FULLSTACK EXPERIENCES</span>
         </motion.div>
-        <motion.h1
-          className="text-7xl md:text-8xl lg:text-9xl font-black mt-4 leading-[1.05] tracking-tight"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: cinematicEase }}
-        >
-          <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">FULLSTACK</span>
+        <ThreeDText variant="rotating" as="h1" className="text-7xl md:text-8xl lg:text-9xl font-black mt-4 leading-[1.05] tracking-tight">
+          FULLSTACK
           <br />
           <span className="text-white">DEVELOPER</span>
-        </motion.h1>
+        </ThreeDText>
         <motion.p className="text-gray-300 max-w-2xl mx-auto mt-6 text-lg md:text-xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.8 }}>
           The premium product and best price
         </motion.p>
@@ -314,24 +476,25 @@ const AboutSection = () => {
     <section className="py-32 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-6xl font-black tracking-tight fire-heading">About LMTSTORE</h2>
+          <ThreeDText variant="floating" as="h2" className="text-5xl md:text-6xl font-black tracking-tight">About LMTSTORE</ThreeDText>
           <p className="text-gray-400 max-w-2xl mx-auto mt-6 text-lg">Premium digital marketplace for Steam accounts and gaming assets.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {items.map((item, idx) => (
-            <motion.div
-              key={idx}
-              className="glass-card p-6 text-center cursor-pointer"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1, duration: 0.6, ease: cinematicEase }}
-              viewport={{ once: true }}
-              whileHover={{ y: -8, borderColor: "rgba(0,191,255,0.4)" }}
-            >
-              <video src={item.video} autoPlay loop muted playsInline className="w-20 h-20 mx-auto mb-4 rounded-full object-cover" />
-              <h3 className={`text-xl font-bold mb-2 ${item.color}`}>{item.title}</h3>
-              <p className="text-gray-400 text-sm">{item.desc}</p>
-            </motion.div>
+            <AppleStyleCard key={idx} index={idx}>
+              <motion.div
+                className="glass-card p-6 text-center cursor-pointer"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1, duration: 0.6, ease: cinematicEase }}
+                viewport={{ once: true }}
+                whileHover={{ y: -8, borderColor: "rgba(0,191,255,0.4)" }}
+              >
+                <video src={item.video} autoPlay loop muted playsInline className="w-20 h-20 mx-auto mb-4 rounded-full object-cover" />
+                <h3 className={`text-xl font-bold mb-2 ${item.color}`}>{item.title}</h3>
+                <p className="text-gray-400 text-sm">{item.desc}</p>
+              </motion.div>
+            </AppleStyleCard>
           ))}
         </div>
 
@@ -371,7 +534,7 @@ const ExperienceSection = () => {
     <section className="py-32 px-6 bg-gradient-to-b from-black to-gray-950">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-6xl font-black tracking-tight fire-heading">Work Experience</h2>
+          <ThreeDText variant="kinetic" as="h2" className="text-5xl md:text-6xl font-black tracking-tight">Work Experience</ThreeDText>
           <p className="text-gray-400 text-lg mt-4">My journey as a developer</p>
         </div>
         <div className="relative border-l-2 border-cyan-400/30 ml-6 md:ml-0">
@@ -405,7 +568,7 @@ const TechStackMarquee = () => {
   return (
     <section className="py-32 bg-black/40 overflow-hidden">
       <div className="text-center mb-12">
-        <h2 className="text-5xl md:text-6xl font-black tracking-tight fire-heading">Tech Stack</h2>
+        <ThreeDText variant="neon" as="h2" className="text-5xl md:text-6xl font-black tracking-tight">Tech Stack</ThreeDText>
       </div>
       <div className="relative">
         <div className="overflow-hidden py-4">
@@ -450,7 +613,7 @@ const ProjectsSection = () => {
     <section className="py-32 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-20">
-          <h2 className="text-5xl md:text-6xl font-black tracking-tight fire-heading">Featured Projects</h2>
+          <ThreeDText variant="extrude" as="h2" className="text-5xl md:text-6xl font-black tracking-tight">Featured Projects</ThreeDText>
           <p className="text-gray-400 text-lg mt-4">Interactive previews · Live demos</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -546,7 +709,7 @@ const TestimonialsSection = () => {
   return (
     <section className="py-32 px-6 bg-gradient-to-b from-black to-gray-950 overflow-hidden">
       <div className="text-center mb-20">
-        <h2 className="text-5xl md:text-6xl font-black tracking-tight fire-heading">Customer Reviews</h2>
+        <ThreeDText variant="floating" as="h2" className="text-5xl md:text-6xl font-black tracking-tight">Customer Reviews</ThreeDText>
         <div className="flex justify-center gap-2 mt-6"><span className="text-yellow-400 text-3xl">★★★★★</span><span className="text-white text-lg ml-3">4.9/5 based on 100+ reviews</span></div>
       </div>
       <div className="relative overflow-hidden">
@@ -568,10 +731,14 @@ const TestimonialsSection = () => {
 const TermsSection = () => (
   <section className="py-32 px-6 bg-gradient-to-b from-black to-gray-950">
     <div className="max-w-5xl mx-auto">
-      <div className="text-center mb-16"><h2 className="text-5xl md:text-6xl font-black tracking-tight fire-heading">Terms & Policies</h2><p className="text-gray-400 text-lg mt-4">Everything you need to know about using Ambani.</p><div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-gray-400"><span className="bg-white/5 px-4 py-2 rounded-full">2026-02-06</span><span className="bg-white/5 px-4 py-2 rounded-full">Guaranteed Protection</span><span className="bg-white/5 px-4 py-2 rounded-full">200+ Users</span><span className="bg-white/5 px-4 py-2 rounded-full">Terms of Service</span><span className="bg-white/5 px-4 py-2 rounded-full">Refund Policy</span><span className="bg-white/5 px-4 py-2 rounded-full">Privacy Policy</span></div></div>
+      <div className="text-center mb-16">
+        <ThreeDText variant="rotating" as="h2" className="text-5xl md:text-6xl font-black tracking-tight">Terms & Policies</ThreeDText>
+        <p className="text-gray-400 text-lg mt-4">Everything you need to know about using Ambani.</p>
+        <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-gray-400"><span className="bg-white/5 px-4 py-2 rounded-full">2026-02-06</span><span className="bg-white/5 px-4 py-2 rounded-full">Guaranteed Protection</span><span className="bg-white/5 px-4 py-2 rounded-full">200+ Users</span><span className="bg-white/5 px-4 py-2 rounded-full">Terms of Service</span><span className="bg-white/5 px-4 py-2 rounded-full">Refund Policy</span><span className="bg-white/5 px-4 py-2 rounded-full">Privacy Policy</span></div>
+      </div>
       <div className="space-y-12">
         <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">Terms of Service</h3><p className="text-gray-400">Agreement to Terms – Welcome to Ambani...</p></div>
-        <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">What You Can (and Can't) Do</h3><div className="grid md:grid-cols-2 gap-6"><div><p className="text-cyan-400 font-semibold">You Can</p><ul className="list-disc list-inside text-gray-400"><li>Use the software for personal use</li><li>Access updates during your license</li><li>Contact support for assistance</li><li>Use on your own machine</li></ul></div><div><p className="text-red-400 font-semibold">You Can't</p><ul className="list-disc list-inside text-gray-400"><li>Reverse engineer or decompile</li><li>Resell or transfer your license</li><li>Use for commercial purposes</li><li>Share with anti-cheat developers</li></ul></div></div><p className="text-gray-500 text-sm mt-4">Ambani is not liable for in-game bans or suspensions.</p></div>
+        <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">What You Can (and Can&rsquo;t) Do</h3><div className="grid md:grid-cols-2 gap-6"><div><p className="text-cyan-400 font-semibold">You Can</p><ul className="list-disc list-inside text-gray-400"><li>Use the software for personal use</li><li>Access updates during your license</li><li>Contact support for assistance</li><li>Use on your own machine</li></ul></div><div><p className="text-red-400 font-semibold">You Can&rsquo;t</p><ul className="list-disc list-inside text-gray-400"><li>Reverse engineer or decompile</li><li>Resell or transfer your license</li><li>Use for commercial purposes</li><li>Share with anti-cheat developers</li></ul></div></div><p className="text-gray-500 text-sm mt-4">Ambani is not liable for in-game bans or suspensions.</p></div>
         <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">Refund Policy</h3><p className="text-gray-400">All purchases are final and non-refundable. Chargebacks result in permanent ban.</p></div>
         <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">Privacy Policy</h3><p className="text-gray-400">We collect only necessary data (account, payment via Stripe, technical data). We never sell your data.</p></div>
       </div>
@@ -583,7 +750,7 @@ const TermsSection = () => (
 const ContactSection = () => (
   <section id="contact" className="py-32 px-6">
     <div className="max-w-4xl mx-auto text-center">
-      <h2 className="text-5xl md:text-6xl font-black tracking-tight fire-heading mb-6">Contact Us</h2>
+      <ThreeDText variant="neon" as="h2" className="text-5xl md:text-6xl font-black tracking-tight mb-6">Contact Us</ThreeDText>
       <p className="text-gray-400 text-lg mb-12">Have questions? Reach out to us!</p>
       <div className="glass-card p-10 rounded-3xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><input type="text" placeholder="Your Name" className="px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-400" /><input type="email" placeholder="Your Email" className="px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-400" /></div>
@@ -696,7 +863,7 @@ const RotatingProductCard = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// ========== NEW: VERTICAL MARQUEE (SEAMLESS LOOP) ==========
+// ========== VERTICAL MARQUEE (SEAMLESS LOOP) ==========
 const VerticalMarquee = ({ children, direction = "up", speed = 30 }: { children: React.ReactNode; direction?: "up" | "down"; speed?: number }) => {
   const [singleHeight, setSingleHeight] = useState(0);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -708,7 +875,6 @@ const VerticalMarquee = ({ children, direction = "up", speed = 30 }: { children:
     }
   }, [children]);
 
-  // If height is not yet measured, show static content (hidden overflow to avoid flicker)
   return (
     <div ref={containerRef} className="relative overflow-hidden h-[600px]">
       {singleHeight > 0 ? (
@@ -721,7 +887,6 @@ const VerticalMarquee = ({ children, direction = "up", speed = 30 }: { children:
           {children}
         </motion.div>
       ) : (
-        // Static measurement phase (invisible, but we still need to measure height)
         <div className="absolute opacity-0 pointer-events-none">
           <div ref={measureRef} className="flex flex-col gap-6">{children}</div>
         </div>
@@ -747,31 +912,33 @@ const StorePage = () => {
     const discountPercent = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
     return (
       <RotatingProductCard key={p.id}>
-        <div className="glass-card rounded-2xl overflow-hidden group cursor-pointer hover:-translate-y-2 transition-all duration-300 h-full flex flex-col">
-          <div className="relative h-48">
-            <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
-            <span className="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded-full">-{discountPercent}%</span>
-            <span className="absolute top-3 left-3 bg-cyan-400/80 text-white text-xs px-2 py-1 rounded-full">{p.category}</span>
-          </div>
-          <div className="p-5 flex-1 flex flex-col">
-            <h3 className="text-xl font-bold mb-1">{p.title}</h3>
-            <p className="text-gray-400 text-sm mb-3">{p.description.substring(0, 80)}...</p>
-            {p.type === "account" && (
-              <div className="flex flex-wrap gap-2 mb-3 text-xs">
-                <span className="bg-white/10 px-2 py-1 rounded-full">🎮 {p.gamesCount} Games</span>
-                <span className="bg-white/10 px-2 py-1 rounded-full">Level {p.level}</span>
+        <GlowBorder>
+          <div className="glass-card rounded-2xl overflow-hidden group cursor-pointer hover:-translate-y-2 transition-all duration-300 h-full flex flex-col">
+            <div className="relative h-48">
+              <img src={p.image} alt={p.title} className="w-full h-full object-cover" />
+              <span className="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded-full">-{discountPercent}%</span>
+              <span className="absolute top-3 left-3 bg-cyan-400/80 text-white text-xs px-2 py-1 rounded-full">{p.category}</span>
+            </div>
+            <div className="p-5 flex-1 flex flex-col">
+              <h3 className="text-xl font-bold mb-1">{p.title}</h3>
+              <p className="text-gray-400 text-sm mb-3">{p.description.substring(0, 80)}...</p>
+              {p.type === "account" && (
+                <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                  <span className="bg-white/10 px-2 py-1 rounded-full">🎮 {p.gamesCount} Games</span>
+                  <span className="bg-white/10 px-2 py-1 rounded-full">Level {p.level}</span>
+                </div>
+              )}
+              {p.type === "zip" && <div className="mb-3 text-xs text-gray-400">📦 Size: {p.fileSize}</div>}
+              <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/10">
+                <div>
+                  <span className="text-2xl font-bold text-cyan-400">${p.price}</span>
+                  <span className="text-gray-500 line-through text-sm ml-2">${p.originalPrice}</span>
+                </div>
+                <button onClick={() => window.open("https://t.me/Shuwangcoder", "_blank")} className="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-full text-sm">Buy Now 🛒</button>
               </div>
-            )}
-            {p.type === "zip" && <div className="mb-3 text-xs text-gray-400">📦 Size: {p.fileSize}</div>}
-            <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/10">
-              <div>
-                <span className="text-2xl font-bold text-cyan-400">${p.price}</span>
-                <span className="text-gray-500 line-through text-sm ml-2">${p.originalPrice}</span>
-              </div>
-              <button onClick={() => window.open("https://t.me/Shuwangcoder", "_blank")} className="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-full text-sm">Buy Now 🛒</button>
             </div>
           </div>
-        </div>
+        </GlowBorder>
       </RotatingProductCard>
     );
   };
@@ -820,9 +987,9 @@ const StorePage = () => {
 const CombinedAboutPage = () => {
   return (
     <>
-      <AboutSection />
-      <ExperienceSection />
-      <TermsSection />
+      <ParallaxBlurReveal><AboutSection /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><ExperienceSection /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><TermsSection /></ParallaxBlurReveal>
     </>
   );
 };
@@ -830,9 +997,9 @@ const CombinedAboutPage = () => {
 const CombinedWorkPage = () => {
   return (
     <>
-      <TechStackMarquee />
-      <TestimonialsSection />
-      <TerminalSection />
+      <ParallaxBlurReveal><TechStackMarquee /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><TestimonialsSection /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><TerminalSection /></ParallaxBlurReveal>
     </>
   );
 };
@@ -851,14 +1018,14 @@ const FullHomePage = () => {
   return (
     <>
       <HeroSectionFull />
-      <AnimatedAbout />
-      <AnimatedTechStack />
-      <AnimatedExperience />
-      <AnimatedProjects />
-      <AnimatedTerminal />
-      <AnimatedTestimonials />
-      <AnimatedTerms />
-      <AnimatedContact />
+      <ParallaxBlurReveal><AnimatedAbout /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><AnimatedTechStack /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><AnimatedExperience /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><AnimatedProjects /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><AnimatedTerminal /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><AnimatedTestimonials /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><AnimatedTerms /></ParallaxBlurReveal>
+      <ParallaxBlurReveal><AnimatedContact /></ParallaxBlurReveal>
     </>
   );
 };
@@ -868,7 +1035,7 @@ const GlowOrbs = () => (<><div className="fixed top-[-20%] left-[10%] w-[800px] 
 const ScrollProgress = () => { const { scrollYProgress } = useScroll(); return <motion.div className="fixed top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-400 via-blue-500 to-red-500 origin-left z-50" style={{ scaleX: scrollYProgress }} />; };
 const ParticleBackground = () => {
   const particlesInit = async (engine: any) => { await loadSlim(engine); };
-  return <Particles id="tsparticles" init={particlesInit} className="fixed inset-0 -z-10" options={{ fpsLimit: 60, particles: { number: { value: 80, density: { enable: true, width: 1920, height: 1080 } }, color: { value: ["#00BFFF","#FF69B4","#ff0000"] }, links: { color: "#ffffff", opacity: 0.05, distance: 200 }, move: { enable: true, speed: 1.2, direction: "none", random: false, straight: false }, opacity: { value: 0.4 }, size: { value: 2 } }, interactivity: { events: { onHover: { enable: true, mode: "repulse" } } } }} />;
+  return <Particles id="tsparticles" particlesInit={particlesInit} className="fixed inset-0 -z-10" options={{ fpsLimit: 60, particles: { number: { value: 80, density: { enable: true, width: 1920, height: 1080 } }, color: { value: ["#00BFFF","#FF69B4","#ff0000"] }, links: { color: "#ffffff", opacity: 0.05, distance: 200 }, move: { enable: true, speed: 1.2, direction: "none", random: false, straight: false }, opacity: { value: 0.4 }, size: { value: 2 } }, interactivity: { events: { onHover: { enable: true, mode: "repulse" } } } }} />;
 };
 
 // ========== MAIN HOME PAGE ==========
@@ -901,6 +1068,7 @@ export default function HomePage() {
           <CommandMenu />
           <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
           <CombinedAboutPage />
+          <ScrollLinkedCounter />
           <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
         </div>
       </SmoothScrollProvider>
@@ -918,6 +1086,7 @@ export default function HomePage() {
           <CommandMenu />
           <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
           <CombinedWorkPage />
+          <ScrollLinkedCounter />
           <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
         </div>
       </SmoothScrollProvider>
@@ -930,6 +1099,7 @@ export default function HomePage() {
         <CommandMenu />
         <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
         <StorePage />
+        <ScrollLinkedCounter />
       </SmoothScrollProvider>
     );
   }
@@ -945,6 +1115,7 @@ export default function HomePage() {
           <CommandMenu />
           <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
           <ContactSection />
+          <ScrollLinkedCounter />
           <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
         </div>
       </SmoothScrollProvider>
@@ -962,6 +1133,7 @@ export default function HomePage() {
         <CommandMenu />
         <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
         <FullHomePage />
+        <ScrollLinkedCounter />
         <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
       </div>
     </SmoothScrollProvider>
