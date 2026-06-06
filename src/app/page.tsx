@@ -72,40 +72,40 @@ const ThreeDText = ({
       style: {
         textShadow: "0 1px 0 #000, 0 2px 0 #000, 0 3px 0 #000, 0 4px 0 #000, 0 5px 0 #000, 0 6px 0 #000, 0 7px 0 #000, 0 8px 0 #000",
         transform: "translateY(-2px)",
-      },
+      } as React.CSSProperties,
       animate: { y: [0, -2, 0] },
       transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
     },
     neon: {
       style: {
         textShadow: "0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 40px #00bfff",
-        animation: "pulse 2s ease-in-out infinite",
-      },
+      } as React.CSSProperties,
       animate: { opacity: [0.9, 1, 0.9] },
       transition: { duration: 1.5, repeat: Infinity }
     },
     floating: {
       animate: { y: [0, -15, 0] },
       transition: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-      style: { display: "inline-block" }
+      style: { display: "inline-block" } as React.CSSProperties
     },
     rotating: {
       animate: { rotateX: [0, 15, 0], rotateY: [0, 360, 0] },
       transition: { duration: 8, repeat: Infinity, ease: "linear" },
-      style: { display: "inline-block", transformStyle: "preserve-3d" }
+      className: "inline-block [transform-style:preserve-3d]"
     },
     kinetic: {
       animate: { scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] },
       transition: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-      style: { display: "inline-block" }
+      style: { display: "inline-block" } as React.CSSProperties
     }
   };
   
   const config = variants[variant] || variants.extrude;
+  const combinedClassName = `${className} ${config.className || ""}`;
   
   return (
     <MotionComponent
-      className={`font-black tracking-tight bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent ${className}`}
+      className={combinedClassName}
       animate={config.animate}
       transition={config.transition}
       style={config.style}
@@ -118,18 +118,18 @@ const ThreeDText = ({
 // ========== PARALLAX BLUR REVEAL ==========
 const ParallaxBlurReveal = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: false, margin: "-100px 0px -100px 0px" });
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"]
   });
-  const blur = useTransform(scrollYProgress, [0, 0.5, 1], [8, 0, 8]);
+  // ប្តូរ blur អោយនៅត្រឹម 0 ជានិច្ច
+  const blur = useTransform(scrollYProgress, [0, 0.5, 1], [0, 0, 0]);
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.3, 1, 1, 0.3]);
   
   return (
     <motion.div
       ref={ref}
-      style={{ filter: isInView ? `blur(0px)` : `blur(${blur.get()}px)`, opacity }}
+      style={{ position: "relative", filter: `blur(${blur.get()}px)`, opacity }}
       className={className}
     >
       {children}
@@ -137,19 +137,19 @@ const ParallaxBlurReveal = ({ children, className = "" }: { children: React.Reac
   );
 };
 
-// ========== SCROLL LINKED ANIMATION ==========
+// ========== SCROLL LINKED ANIMATION (Counter) ==========
 const ScrollLinkedCounter = () => {
   const { scrollYProgress } = useScroll();
   const [section, setSection] = useState("Hero");
   useEffect(() => {
     const unsubscribe = scrollYProgress.on("change", (latest) => {
       if (latest < 0.1) setSection("FULLSTACK");
-      else if (latest < 0.25) setSection("About");
-      else if (latest < 0.4) setSection("Tech Stack");
-      else if (latest < 0.55) setSection("Experience");
-      else if (latest < 0.7) setSection("Projects");
-      else if (latest < 0.85) setSection("Reviews");
-      else setSection("Contact");
+      else if (latest < 0.2) setSection("Work Video");
+      else if (latest < 0.35) setSection("Highlights");
+      else if (latest < 0.5) setSection("Tech Stack");
+      else if (latest < 0.65) setSection("Experience");
+      else if (latest < 0.8) setSection("Projects");
+      else setSection("Reviews");
     });
     return () => unsubscribe();
   }, [scrollYProgress]);
@@ -161,7 +161,7 @@ const ScrollLinkedCounter = () => {
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 1 }}
     >
-      <span className="text-cyan-400">Currently viewing:</span> {section}
+      <span className="text-cyan-400">Now viewing:</span> {section}
     </motion.div>
   );
 };
@@ -180,7 +180,7 @@ const AppleStyleCard = ({ children, index }: { children: React.ReactNode; index:
   return (
     <motion.div
       ref={ref}
-      style={{ scale, opacity, y }}
+      style={{ position: "relative", scale, opacity, y }}
       transition={{ type: "spring", stiffness: 100 }}
       className="w-full"
     >
@@ -189,7 +189,7 @@ const AppleStyleCard = ({ children, index }: { children: React.ReactNode; index:
   );
 };
 
-// ========== COMMAND MENU ==========
+// ========== COMMAND MENU (unchanged) ==========
 const CommandMenu = () => {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -464,7 +464,105 @@ const HeroSectionFull = () => {
   );
 };
 
-// ========== ABOUT SECTION (CARDS + CREDIT TEAM) ==========
+// ========== NEW: VIDEO SHOWCASE SECTION (work.mp4) ==========
+const WorkVideoSection = () => {
+  const { scrollYProgress } = useScroll();
+  const videoScale = useTransform(scrollYProgress, [0, 0.3], [0.9, 1]);
+  const videoBlur = useTransform(scrollYProgress, [0, 0.3], [5, 0]);
+  
+  return (
+    <section className="py-32 px-6 overflow-hidden">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <ThreeDText variant="neon" as="h2" className="text-4xl md:text-5xl">Our Work in Action</ThreeDText>
+          <p className="text-gray-400 mt-4">Watch how LMTSTORE transforms ideas into reality</p>
+        </div>
+        <motion.div 
+          style={{ scale: videoScale, filter: `blur(${videoBlur.get()}px)` }}
+          className="relative rounded-2xl overflow-hidden shadow-2xl shadow-cyan-500/20 border border-cyan-400/30"
+        >
+          <video 
+            src="/video/work.mp4" 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            controls
+            className="w-full h-auto rounded-2xl"
+          />
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+// ========== NEW: HIGHLIGHTS SECTION (FULLSTACK DEVELOPER, LMTSTORE, Terms) ==========
+const HighlightsSection = () => {
+  const highlights = [
+    {
+      title: "FULLSTACK DEVELOPER",
+      icon: "⚛️",
+      desc: "End-to-end web solutions with Next.js, Node.js, PostgreSQL, and modern cloud infrastructure.",
+      tags: ["Next.js", "Node.js", "PostgreSQL", "Docker"],
+      link: "/work"
+    },
+    {
+      title: "LMTSTORE",
+      icon: "🛒",
+      desc: "Premium digital marketplace for Steam accounts, sound packs, cheat engines, and more.",
+      tags: ["E-commerce", "Steam", "Instant Delivery", "Secure"],
+      link: "/store"
+    },
+    {
+      title: "Terms & Policies",
+      icon: "📜",
+      desc: "Clear, fair, and transparent policies to protect your usage and our services.",
+      tags: ["Privacy", "Refund", "Security", "Legal"],
+      link: "/about#terms"
+    }
+  ];
+
+  return (
+    <section className="py-32 px-6 bg-gradient-to-b from-black/80 to-gray-950/50">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-20">
+          <ThreeDText variant="floating" as="h2" className="text-5xl md:text-6xl">Core Highlights</ThreeDText>
+          <p className="text-gray-400 text-lg mt-4">What makes us stand out</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {highlights.map((item, idx) => (
+            <motion.div
+              key={item.title}
+              className="glass-card p-8 rounded-2xl cursor-pointer group"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1, duration: 0.6, ease: cinematicEase }}
+              whileHover={{ y: -8, borderColor: "rgba(0,191,255,0.6)" }}
+            >
+              <div className="text-6xl mb-5">{item.icon}</div>
+              <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                {item.title}
+              </h3>
+              <p className="text-gray-400 mb-4 leading-relaxed">{item.desc}</p>
+              <div className="flex flex-wrap gap-2 mb-5">
+                {item.tags.map((tag, i) => (
+                  <span key={i} className="text-xs bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <button className="text-cyan-400 text-sm flex items-center gap-1 group-hover:gap-2 transition-all duration-300">
+                Learn More →
+              </button>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ========== ABOUT SECTION (unchanged) ==========
 const AboutSection = () => {
   const items = [
     { title: "Steam Accounts", video: "/video/Steam.mp4", desc: "Premium accounts with top games at affordable prices", color: "text-cyan-400" },
@@ -561,7 +659,7 @@ const ExperienceSection = () => {
   );
 };
 
-// ========== TECH STACK MARQUEE (2 ROWS) ==========
+// ========== TECH STACK MARQUEE ==========
 const TechStackMarquee = () => {
   const techs = ["React", "Next.js", "Node.js", "PostgreSQL", "Docker", "TypeScript", "Tailwind", "Three.js"];
   const duplicated = [...techs, ...techs];
@@ -727,18 +825,18 @@ const TestimonialsSection = () => {
   );
 };
 
-// ========== TERMS & POLICIES ==========
+// ========== TERMS & POLICIES SECTION (unchanged but used) ==========
 const TermsSection = () => (
   <section className="py-32 px-6 bg-gradient-to-b from-black to-gray-950">
     <div className="max-w-5xl mx-auto">
       <div className="text-center mb-16">
         <ThreeDText variant="rotating" as="h2" className="text-5xl md:text-6xl font-black tracking-tight">Terms & Policies</ThreeDText>
-        <p className="text-gray-400 text-lg mt-4">Everything you need to know about using Ambani.</p>
+        <p className="text-gray-400 text-lg mt-4">Everything you need to know about using LMTSTORE.</p>
         <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-gray-400"><span className="bg-white/5 px-4 py-2 rounded-full">2026-02-06</span><span className="bg-white/5 px-4 py-2 rounded-full">Guaranteed Protection</span><span className="bg-white/5 px-4 py-2 rounded-full">200+ Users</span><span className="bg-white/5 px-4 py-2 rounded-full">Terms of Service</span><span className="bg-white/5 px-4 py-2 rounded-full">Refund Policy</span><span className="bg-white/5 px-4 py-2 rounded-full">Privacy Policy</span></div>
       </div>
       <div className="space-y-12">
-        <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">Terms of Service</h3><p className="text-gray-400">Agreement to Terms – Welcome to Ambani...</p></div>
-        <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">What You Can (and Can&rsquo;t) Do</h3><div className="grid md:grid-cols-2 gap-6"><div><p className="text-cyan-400 font-semibold">You Can</p><ul className="list-disc list-inside text-gray-400"><li>Use the software for personal use</li><li>Access updates during your license</li><li>Contact support for assistance</li><li>Use on your own machine</li></ul></div><div><p className="text-red-400 font-semibold">You Can&rsquo;t</p><ul className="list-disc list-inside text-gray-400"><li>Reverse engineer or decompile</li><li>Resell or transfer your license</li><li>Use for commercial purposes</li><li>Share with anti-cheat developers</li></ul></div></div><p className="text-gray-500 text-sm mt-4">Ambani is not liable for in-game bans or suspensions.</p></div>
+        <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">Terms of Service</h3><p className="text-gray-400">Agreement to Terms – Welcome to LMTSTORE...</p></div>
+        <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">What You Can (and Can&rsquo;t) Do</h3><div className="grid md:grid-cols-2 gap-6"><div><p className="text-cyan-400 font-semibold">You Can</p><ul className="list-disc list-inside text-gray-400"><li>Use the software for personal use</li><li>Access updates during your license</li><li>Contact support for assistance</li><li>Use on your own machine</li></ul></div><div><p className="text-red-400 font-semibold">You Can&rsquo;t</p><ul className="list-disc list-inside text-gray-400"><li>Reverse engineer or decompile</li><li>Resell or transfer your license</li><li>Use for commercial purposes</li><li>Share with anti-cheat developers</li></ul></div></div><p className="text-gray-500 text-sm mt-4">LMTSTORE is not liable for in-game bans or suspensions.</p></div>
         <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">Refund Policy</h3><p className="text-gray-400">All purchases are final and non-refundable. Chargebacks result in permanent ban.</p></div>
         <div className="glass-card p-8 rounded-2xl"><h3 className="text-2xl font-bold mb-4">Privacy Policy</h3><p className="text-gray-400">We collect only necessary data (account, payment via Stripe, technical data). We never sell your data.</p></div>
       </div>
@@ -863,7 +961,7 @@ const RotatingProductCard = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// ========== VERTICAL MARQUEE (SEAMLESS LOOP) ==========
+// ========== VERTICAL MARQUEE ==========
 const VerticalMarquee = ({ children, direction = "up", speed = 30 }: { children: React.ReactNode; direction?: "up" | "down"; speed?: number }) => {
   const [singleHeight, setSingleHeight] = useState(0);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -961,7 +1059,6 @@ const StorePage = () => {
             </div>
           </div>
 
-          {/* Two-column vertical marquee */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <VerticalMarquee direction="up" speed={80}>
               {leftProducts.map(p => renderProduct(p))}
@@ -971,7 +1068,6 @@ const StorePage = () => {
             </VerticalMarquee>
           </div>
 
-          {/* Spacer to allow page scrolling */}
           <div className="h-96"></div>
 
           {filtered.length === 0 && (
@@ -1013,11 +1109,15 @@ const AnimatedTerminal = withScrollAnimation(TerminalSection);
 const AnimatedTestimonials = withScrollAnimation(TestimonialsSection);
 const AnimatedContact = withScrollAnimation(ContactSection);
 const AnimatedTerms = withScrollAnimation(TermsSection);
+const AnimatedHighlights = withScrollAnimation(HighlightsSection);
+const AnimatedWorkVideo = withScrollAnimation(WorkVideoSection);
 
 const FullHomePage = () => {
   return (
     <>
       <HeroSectionFull />
+      <AnimatedWorkVideo />
+      <AnimatedHighlights />
       <ParallaxBlurReveal><AnimatedAbout /></ParallaxBlurReveal>
       <ParallaxBlurReveal><AnimatedTechStack /></ParallaxBlurReveal>
       <ParallaxBlurReveal><AnimatedExperience /></ParallaxBlurReveal>
@@ -1069,7 +1169,7 @@ export default function HomePage() {
           <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
           <CombinedAboutPage />
           <ScrollLinkedCounter />
-          <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
+          <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2026 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
         </div>
       </SmoothScrollProvider>
     );
@@ -1087,7 +1187,7 @@ export default function HomePage() {
           <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
           <CombinedWorkPage />
           <ScrollLinkedCounter />
-          <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
+          <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2026 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
         </div>
       </SmoothScrollProvider>
     );
@@ -1116,7 +1216,7 @@ export default function HomePage() {
           <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
           <ContactSection />
           <ScrollLinkedCounter />
-          <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
+          <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2026 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
         </div>
       </SmoothScrollProvider>
     );
@@ -1134,7 +1234,7 @@ export default function HomePage() {
         <MorphingNavbar setActivePage={(p) => setActivePage(p as any)} activePage={activePage} />
         <FullHomePage />
         <ScrollLinkedCounter />
-        <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2025 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
+        <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5">© 2026 LMTSTORE · Built with Next.js & Framer Motion · <kbd className="px-2 py-1 bg-white/5 rounded-md">⌘</kbd>+<kbd className="px-2 py-1 bg-white/5 rounded-md">K</kbd> to search</footer>
       </div>
     </SmoothScrollProvider>
   );
