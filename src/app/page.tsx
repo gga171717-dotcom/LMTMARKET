@@ -17,7 +17,6 @@ import { ElectricStrokeText } from "@/components/electric-stroke-text";
 import { ElectricBorder } from "@/components/electric-border";
 import { GradientBorder } from "@/components/gradient-border";
 import { ChainedText } from "@/components/chained-text";
-import { SpotlightNavbar } from "@/components/spotlight-navbar";
 
 /* ============================================================
    CONSTANTS
