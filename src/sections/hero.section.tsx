@@ -1,12 +1,15 @@
+"use client";
+
 import { styles } from "@/app/styles";
 import { Computer } from "@/components/canvas/computer/render.component";
 import { MotionDiv } from "@/components/motion/div.component";
+import { ElectricText } from "@/components/electric-text";
 import Link from "next/link";
 
 export const Hero = () => (
   <section className="relative w-full h-screen mx-auto">
     <div
-      className={` absolute mx-auto ${styles.paddingX} pt-24 flex flex-row items-start gap-5`}
+      className={`absolute mx-auto ${styles.paddingX} pt-24 flex flex-row items-start gap-5`}
     >
       <div className="flex flex-col justify-center items-center mt-5">
         <div className="w-5 h-5 rounded-full bg-[#915EFF]" />
@@ -14,8 +17,14 @@ export const Hero = () => (
       </div>
 
       <div>
-        <h1 className={`${styles.hero.head.text} text-white`}>
-          Hi, I&#39;m <span className="text-[#915EFF]">Samuel</span>
+        <h1 className={`${styles.hero.head.text} text-white flex flex-wrap items-baseline gap-2`}>
+          Hi, I&#39;m{" "}
+          {/* ✅ បន្ថែម ElectricText សម្រាប់ឈ្មោះ Samuel */}
+          <ElectricText
+            text="Samuel"
+            className="text-[#915EFF]"
+            fontSize="inherit"
+          />
         </h1>
 
         <p className={`${styles.hero.sub.text} mt-2 text-white-100`}>

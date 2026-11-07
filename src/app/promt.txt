@@ -1,0 +1,849 @@
+# spotlight-tabs — build prompt (AI chat)
+<!--⁠​‌‌​‌‌​​‌​‌‌​​​‌​‌​‌​‌‌‌​‌​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​‌⁠ uberdesigner prompt format v1 · spotlight-tabs · v1.0.0 · chat -->
+
+## How to answer (read this first)
+This prompt is for an AI chat, such as Claude, ChatGPT or Gemini. The person reading your answer may not code, and
+they should see the finished page as a live preview right in the chat.
+- **Answer with the page itself: one complete, self-contained HTML file.** There is no project, no folder, no npm, no
+  build step and no zip. Write the file yourself, in your reply. Don't use a code-running, sandbox or file tool to
+  write, test or package it.
+  - **In Claude:** put it in one HTML artifact (`text/html`, not React).
+  - **In ChatGPT:** put it in one `html` code block, so the reader can press **Preview**. The whole file goes in that
+    one block. Don't split it across blocks.
+  - **Anywhere else:** put it in one `html` code block.
+- The file is about 33 kB, which fits in one reply. Write all of it. Don't shorten it, skip parts, or write "rest
+  unchanged" or "same as above".
+- Before the file, write one short sentence about what you're building. After it, add this line for the reader, as
+  written:
+  - "Open the preview full screen to see the bar at full size; a demo cursor clicks through the tabs by itself, and hovering or clicking a tab, or the arrow keys, take over."
+- Use every value below as written. If you can render the page, check it against "Done when"; don't tune anything by
+  eye.
+
+## Goal
+You're building a single full-screen interactive UI piece: **a dark glass tab bar where the active tab sits under a soft
+beam of light**. In the middle of a near-black stage with film grain lies a frosted glass bar (62 px tall, fully
+rounded) with five tabs, each a Lucide icon and a label in Geist Medium: Overview, Projects, Library, Team, Settings.
+The bar has a fine light rim, tinted mint at its left end and lilac at its right. The active tab sits in a raised glass
+pill and is lit: its label near-white, its icon a cool mint with a soft mint glow. Above it hangs a beam of light: a
+cone made of a soft body, nine rays that breathe at their own pace, a bright core thread and dust motes drifting up
+through it; it pools as a soft light on the floor under the bar, runs as a thin light line along the bar's top rim, and
+falls into the pill from its top edge.
+Hover a tab and a faint glass pill fades in under the pointer (and follows softly if you move to another tab). Click a
+tab and the active pill travels there on springs: one spring per edge, the edge in front stiffer, so the pill stretches
+as it goes and settles back. While the pill moves fast the beam focuses into a thin bright thread, and follows the pill
+with its own lag, leaning into it; when the pill slows the beam blooms back into a cone with a pulse of light on the
+pill and the floor. Labels light up as the pill passes over them. Left alone for 4 s, a demo hand cursor takes over and
+plays a 10.6-second loop (Projects, Team, Library, Settings, Overview); it also plays from the start.
+The design is a 1080 × 1080 stage that scales to fit the window (it fills the window's shorter side) and stays centred;
+the scene on it (bar, beam, floor, cursor) is drawn at 1.45× around the stage's centre, and the backdrop and grain run
+on past the stage to the window's edges. There are no images: CSS, one canvas for the beam, inline SVG icons, Geist
+from Google Fonts. Match everything below exactly: layout, colours, layers and every motion number. Keep the copy as
+given; the reader swaps in their own afterwards.
+
+## Build target
+- One HTML file: `<!doctype html>`, the `<head>`, one inline `<style>`, the markup, one inline `<script>` at the end of
+  `<body>`. Plain HTML, CSS and JavaScript: no React, no TypeScript, no `import`, no modules, no libraries. The motion
+  is one `requestAnimationFrame` loop that steps springs and draws everything: no GSAP, no CSS animations or
+  transitions.
+- The only outside file is the font, with exactly these three links. Keep the font link exactly as it is: it asks for
+  weights 400 **and** 500, which makes Google Fonts serve Geist's variable file; a request for 500 alone serves a static
+  cut whose letter widths differ slightly, which moves the labels and the bar's width by fractions of a pixel. Only
+  weight 500 is used.
+  `<link rel="preconnect" href="https://fonts.googleapis.com">`,
+  `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>` and
+  `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&display=swap">`
+- There are no photos, videos or icon files. The five tab icons are inline SVG symbols (Assets gives the exact block),
+  the demo's hand cursor is inline SVG in the markup, the beam is drawn on a canvas, and the film grain is an SVG data
+  URI in a token.
+- Order inside the file:
+  1. `<html lang="en">`. `<head>`: `<meta charset="utf-8">`, viewport (`width=device-width, initial-scale=1`), title,
+     meta description, `<link rel="icon" href="data:,">`, the three font links.
+  2. `<style>`: the tokens (as given), then everything under "The style" (as given), nothing else.
+  3. `<body>`: the SVG symbols, then the markup exactly as given under Layout.
+  4. One inline `<script>` at the end of `<body>`: part 1 exactly as given under Motion, then part 2 written from the
+     Motion spec.
+- Page title: "Spotlight Tabs — Glass tab bar under a beam of light"; meta description: "A dark frosted-glass tab bar where
+  the active tab sits under a soft beam of light that thins as it travels and blooms on arrival."
+- Visual values live as CSS variables on `:root`. Motion numbers live as named constants at the top of the script
+  (they're in part 1).
+
+## Design tokens
+**Scale.** All sizes are design px of the 1080 × 1080 stage. One design px is `--u`:
+`--u: calc(min(100vw, 100svh) / 1080)`, so the stage (`1080 × --u`) fills the window's shorter side. There is no
+responsive layout and no phone layout: the whole piece scales with the window. Every size in the CSS is written
+`calc(N * var(--u))`, except the measuring copy of the tabs (Layout → 3), which is in plain px on purpose. The scene
+(beam, floor, bar, cursor) sits inside an element scaled `1.45×` around the stage's centre (`--scene-scale`), so its
+numbers are **scene px**: a point at scene x lands on the stage at `540 + (x − 540) × 1.45` (same for y). The bar's top
+at scene y 510 is at stage y 496.5.
+**Colour syntax.** Write colours exactly as given (`rgba(r, g, b, a)` with commas, hex where hex is given). The
+per-frame colours the script writes are legacy `rgb(…)` / `rgba(…)` strings without spaces; keep them that way.
+Put this block first in the `<style>`, exactly as given:
+```css
+/* Tokens. Every size is a design px of the 1080 × 1080 stage (--u); the scene on it is drawn at 1.45×. */
+:root {
+  /* Scale: one design px of the 1080 × 1080 stage. The stage fills the window's shorter side. */
+  --u: calc(min(100vw, 100svh) / 1080);
+  --stage: calc(1080 * var(--u));
+  /* The scene (bar, beam, floor, cursor) is drawn at 1.45× around the stage's centre. */
+  --scene-scale: 1.45;
+
+  /* Type */
+  --font-sans: "Geist", ui-sans-serif, sans-serif;
+  --tab-size: calc(15.5 * var(--u));
+  --tab-weight: 500;
+  --tab-tracking: -0.005em;
+  --tab-ink: #5c5c64;
+
+  /* Page and backdrop: a dim light just below the stage's centre, running on to the window's edges */
+  --page: #040405;
+  --backdrop: radial-gradient(
+    calc(648 * var(--u)) calc(486 * var(--u)) at 50% calc(50% + 21.6 * var(--u)),
+    #121214,
+    #08080a 60%,
+    var(--page)
+  );
+
+  /* Film grain over everything: SVG fractal noise, a 200-px tile, overlay at 9% */
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --grain-tile: calc(200 * var(--u));
+  --grain-opacity: 0.09;
+
+  /* The bar: frosted glass with a fine rim, tinted mint on the left and lilac on the right */
+  --bar-y: calc(510 * var(--u));
+  --bar-h: calc(62 * var(--u));
+  --bar-radius: calc(31 * var(--u));
+  --bar-glass: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.055),
+    rgba(255, 255, 255, 0.015) 50%,
+    rgba(255, 255, 255, 0.03)
+  );
+  --bar-shadow: inset 0 var(--u) 0 rgba(255, 255, 255, 0.08),
+    0 calc(30 * var(--u)) calc(60 * var(--u)) calc(-20 * var(--u)) rgba(0, 0, 0, 0.95),
+    0 0 0 var(--u) rgba(0, 0, 0, 0.6);
+  --bar-rim: linear-gradient(
+    100deg,
+    rgba(150, 255, 222, 0.32),
+    rgba(255, 255, 255, 0.1) 18%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(180, 170, 255, 0.16)
+  );
+  --rim-width: var(--u);
+
+  /* The light line on the bar's top rim, under the beam */
+  --rimlight-y: calc(-1 * var(--u));
+  --rimlight-h: calc(2 * var(--u));
+  --rimlight-radius: calc(2 * var(--u));
+  --rimlight: radial-gradient(closest-side, rgba(225, 255, 246, 0.9), rgba(225, 255, 246, 0));
+
+  /* Pills: the raised glass one on the active tab, and the faint one under the pointer */
+  --pill-y: calc(7 * var(--u));
+  --pill-h: calc(48 * var(--u));
+  --pill-radius: calc(24 * var(--u));
+  --active-glass: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.13),
+    rgba(255, 255, 255, 0.05) 55%,
+    rgba(255, 255, 255, 0.07)
+  );
+  --active-shadow: inset 0 var(--u) 0 rgba(255, 255, 255, 0.22),
+    0 calc(8 * var(--u)) calc(20 * var(--u)) calc(-8 * var(--u)) rgba(0, 0, 0, 0.9),
+    0 0 calc(24 * var(--u)) calc(-6 * var(--u)) rgba(190, 255, 236, 0.25);
+  --active-rim: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.06) 55%,
+    rgba(170, 255, 230, 0.25)
+  );
+  --active-spark: radial-gradient(closest-side, rgba(235, 255, 250, 0.95), transparent);
+  --active-spark-inset: 18%;
+  --active-spark-blur: calc(0.5 * var(--u));
+  --hover-glass: rgba(255, 255, 255, 0.04);
+  --hover-rim: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02));
+
+  /* Tabs */
+  --tab-pad: calc(21 * var(--u));
+  --tab-gap: calc(10 * var(--u));
+  --icon-size: calc(18 * var(--u));
+
+  /* The beam (a 360 × 400 canvas whose bottom edge sits 8 px inside the bar) and the light pool on the floor */
+  --beam-y: calc(118 * var(--u));
+  --beam-w: calc(360 * var(--u));
+  --beam-h: calc(400 * var(--u));
+  --beam-blur: calc(4 * var(--u));
+  --floor-y: calc(556 * var(--u));
+  --floor-h: calc(60 * var(--u));
+  --floor-blur: calc(18 * var(--u));
+
+  /* The demo cursor: a white hand with a dark outline */
+  --cursor-fill: #fff;
+  --cursor-ink: #111;
+  --cursor-w: calc(22 * var(--u));
+  --cursor-h: calc(24 * var(--u));
+  --cursor-shadow: drop-shadow(0 calc(2 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.6));
+
+  /* Keyboard focus */
+  --focus: rgba(255, 255, 255, 0.55);
+  --focus-width: calc(2 * var(--u));
+  --focus-inset: calc(3 * var(--u)) calc(-4 * var(--u));
+  --focus-radius: calc(28 * var(--u));
+}
+```
+
+**Typography.** One family, Geist (SIL Open Font License), weight 500 only, 15.5 design px, tracking `-0.005em`, for the
+tab labels; the labels rest at `#5c5c64` and light up to near-white (`#f6f7f6`). There is no other text.
+
+## Assets
+None to download. The surfaces are CSS gradients and shadows, the beam is drawn on a canvas, and the film grain is the
+SVG fractal noise in `--grain` (a 200-px tile). The five tab icons are Lucide's (lucide.dev, ISC License), drawn on a
+24-unit grid.
+
+**SVG symbols.** The five tab icons. Put this block first in `<body>`, exactly as given (copy every path character for
+character); the markup uses them with `<use href="#…">` inside an `<svg>` that sets the stroke (so the symbols take the
+tab's colour through `currentColor`):
+```html
+<svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-layout-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol>
+  <symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-library" viewBox="0 0 24 24"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-settings-2" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+</svg>
+```
+
+**Font.** The script waits for Geist Medium before it measures the tabs and starts (at most 3 s; after that it goes on
+with the fallback font), and the scene stays hidden until its first frame. The tabs are measured once: if Geist only
+arrives after those 3 s, the bar keeps the fallback font's widths until the page is reloaded.
+
+## Layout — section by section
+Paint order, back to front: the page's backdrop; the stage (the same backdrop again); the scene: the beam's canvas, the
+floor light, the bar (its rim light, its rim, the hover pill, the active pill with its top spark, its caustic light and
+its rim, the tabs, and an invisible measuring copy of the tabs), the demo cursor; then the film grain over everything.
+Scene coordinates are scene px (before the 1.45× scale), and the bar's parts are measured from the bar's own left
+edge. A position "at (x, y)" is a box's top-left corner.
+
+**Markup.** Write the body exactly like this, after the SVG block. The class names and `data-part` names are what the
+CSS and the script use; keep them exactly. The script finds the elements by `data-part`.
+```html
+<main class="page">
+  <div class="stage">
+    <div class="scene">
+      <canvas class="beam" data-part="beam" width="360" height="400" aria-hidden="true"></canvas>
+      <div class="floor" data-part="floor"></div>
+      <div class="bar" data-part="bar">
+        <div class="rimlight" data-part="rimlight"></div>
+        <div class="rim bar-rim"></div>
+        <div class="pill hover" data-part="hover"><div class="rim hover-rim"></div></div>
+        <div class="pill active" data-part="active"><div class="caustic" data-part="caustic"></div><div class="rim active-rim"></div></div>
+        <div role="tablist" aria-label="Sections" data-part="tablist">
+          <button type="button" role="tab" class="tab" data-part="tab" aria-selected="true" tabindex="0"><svg class="icon" data-part="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-layout-grid"/></svg><span>Overview</span></button>
+          <button type="button" role="tab" class="tab" data-part="tab" aria-selected="false" tabindex="-1"><svg class="icon" data-part="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-folder-open"/></svg><span>Projects</span></button>
+          <button type="button" role="tab" class="tab" data-part="tab" aria-selected="false" tabindex="-1"><svg class="icon" data-part="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-library"/></svg><span>Library</span></button>
+          <button type="button" role="tab" class="tab" data-part="tab" aria-selected="false" tabindex="-1"><svg class="icon" data-part="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-users"/></svg><span>Team</span></button>
+          <button type="button" role="tab" class="tab" data-part="tab" aria-selected="false" tabindex="-1"><svg class="icon" data-part="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-settings-2"/></svg><span>Settings</span></button>
+        </div>
+        <div class="probe" aria-hidden="true">
+          <div class="probe-tab" data-part="probe"><span class="probe-icon"></span><span>Overview</span></div>
+          <div class="probe-tab" data-part="probe"><span class="probe-icon"></span><span>Projects</span></div>
+          <div class="probe-tab" data-part="probe"><span class="probe-icon"></span><span>Library</span></div>
+          <div class="probe-tab" data-part="probe"><span class="probe-icon"></span><span>Team</span></div>
+          <div class="probe-tab" data-part="probe"><span class="probe-icon"></span><span>Settings</span></div>
+        </div>
+      </div>
+      <svg class="cursor" data-part="cursor" viewBox="0 0 22 24" aria-hidden="true">
+        <path class="hand" d="M7.5 11.2V3.6a1.6 1.6 0 0 1 3.2 0v6.2l.1-1.4a1.5 1.5 0 0 1 3 .1v1.6l.1-.9a1.5 1.5 0 0 1 3 .2v1.3a1.4 1.4 0 0 1 2.8.2v4.6c0 3.6-2.6 6.3-6.2 6.3h-1.4c-2.1 0-3.6-.9-4.8-2.6l-3.2-4.6a1.5 1.5 0 0 1 2.3-1.9z" stroke-width="1.3" stroke-linejoin="round"/>
+        <path class="creases" d="M11 13v3.6M13.8 13v3.6M16.6 13.2v3.4" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="grain"></div>
+  </div>
+</main>
+```
+
+**The style.** After the tokens, write this exactly as given. It's the whole stylesheet: don't add declarations, and
+don't add any transition or animation. Every `--x`, `--w` and `--y` the rules declare is a placeholder: the script
+overwrites it every frame (or once, for the bar and the tabs) in design px.
+```css
+/* Base */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; background: var(--page); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+button { appearance: none; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
+
+/* Page, stage, scene, grain */
+.page { position: fixed; inset: 0; overflow: hidden; isolation: isolate; background: var(--backdrop); }
+.stage { position: absolute; left: calc(50% - var(--stage) / 2); top: calc(50% - var(--stage) / 2); width: var(--stage); height: var(--stage); background: var(--backdrop); }
+.scene { position: absolute; left: 0; top: 0; width: var(--stage); height: var(--stage); transform-origin: calc(540 * var(--u)) calc(540 * var(--u)); transform: scale(var(--scene-scale)); visibility: hidden; }
+.scene[data-ready] { visibility: visible; }
+.grain { position: absolute; inset: calc(-2000 * var(--u)); background-image: var(--grain); background-size: var(--grain-tile) var(--grain-tile); opacity: var(--grain-opacity); mix-blend-mode: overlay; pointer-events: none; }
+
+/* Beam and floor light (--x, --w are written every frame, in design px) */
+.beam { --x: 0; position: absolute; left: calc(var(--x) * var(--u)); top: var(--beam-y); width: var(--beam-w); height: var(--beam-h); pointer-events: none; mix-blend-mode: screen; filter: blur(var(--beam-blur)); transform-origin: 50% 100%; }
+.floor { --x: 0; --w: 0; position: absolute; left: calc(var(--x) * var(--u)); top: var(--floor-y); width: calc(var(--w) * var(--u)); height: var(--floor-h); border-radius: 50%; filter: blur(var(--floor-blur)); pointer-events: none; mix-blend-mode: screen; }
+
+/* Bar, rims, pills */
+.bar { --x: 0; --w: 0; position: absolute; left: calc(var(--x) * var(--u)); top: var(--bar-y); width: calc(var(--w) * var(--u)); height: var(--bar-h); border-radius: var(--bar-radius); background: var(--bar-glass); box-shadow: var(--bar-shadow); }
+.rim { position: absolute; inset: 0; border-radius: inherit; padding: var(--rim-width); pointer-events: none; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.bar-rim { background: var(--bar-rim); }
+.rimlight { --x: 0; --w: 0; position: absolute; left: calc(var(--x) * var(--u)); top: var(--rimlight-y); width: calc(var(--w) * var(--u)); height: var(--rimlight-h); border-radius: var(--rimlight-radius); pointer-events: none; background: var(--rimlight); }
+.pill { --x: 0; --w: 0; position: absolute; left: calc(var(--x) * var(--u)); top: var(--pill-y); width: calc(var(--w) * var(--u)); height: var(--pill-h); border-radius: var(--pill-radius); }
+.active { background: var(--active-glass); box-shadow: var(--active-shadow); }
+.active::before { content: ""; position: absolute; left: var(--active-spark-inset); right: var(--active-spark-inset); top: var(--rimlight-y); height: var(--rimlight-h); border-radius: var(--rimlight-radius); background: var(--active-spark); filter: blur(var(--active-spark-blur)); }
+.active-rim { background: var(--active-rim); }
+.caustic { position: absolute; left: 0; right: 0; top: 0; height: 100%; border-radius: var(--pill-radius); pointer-events: none; }
+.hover { background: var(--hover-glass); opacity: 0; }
+.hover-rim { background: var(--hover-rim); }
+
+/* Tabs */
+.tab { --x: 0; --w: 0; position: absolute; left: calc(var(--x) * var(--u)); top: 0; width: calc(var(--w) * var(--u)); height: var(--bar-h); display: flex; align-items: center; gap: var(--tab-gap); padding: 0 var(--tab-pad); font-size: var(--tab-size); font-weight: var(--tab-weight); letter-spacing: var(--tab-tracking); white-space: nowrap; color: var(--tab-ink); }
+.icon { width: var(--icon-size); height: var(--icon-size); flex: none; }
+.tab:focus-visible::after { content: ""; position: absolute; inset: var(--focus-inset); border-radius: var(--focus-radius); outline: var(--focus-width) solid var(--focus); pointer-events: none; }
+
+/* The measuring copy of the tabs: design size in plain px, never shown */
+.probe { position: absolute; left: 0; top: 0; width: 1080px; visibility: hidden; pointer-events: none; }
+.probe-tab { position: absolute; top: 0; display: flex; align-items: center; gap: 10px; padding: 0 21px; font-size: 15.5px; font-weight: 500; letter-spacing: -0.005em; white-space: nowrap; }
+.probe-icon { width: 18px; height: 18px; flex: none; }
+
+/* The demo cursor */
+.cursor { --x: 760; --y: 700; position: absolute; left: calc(var(--x) * var(--u)); top: calc(var(--y) * var(--u)); width: var(--cursor-w); height: var(--cursor-h); pointer-events: none; filter: var(--cursor-shadow); }
+.hand { fill: var(--cursor-fill); stroke: var(--cursor-ink); }
+.creases { fill: none; stroke: var(--cursor-ink); }
+```
+
+What the rules do, part by part:
+
+### 1. Page, stage, scene and grain
+- `.page` (the `<main>`) is fixed over the whole window, isolated (its own blending group) and paints the backdrop: an
+  elliptical light 648 × 486 design px (radii), centred horizontally and 21.6 design px below the window's centre,
+  fading `#121214` → `#08080a` (60%) → `#040405`. Because it's placed in stage units from the window's centre, inside
+  the stage it is exactly `radial-gradient(60% 45% at 50% 52%, …)` of a 1080 square, and outside it (wide or tall
+  windows) it runs on to the window's edges with no seam.
+- `.stage` is the 1080 × 1080 square centred in the window; it paints the same backdrop again and does **not** clip (on
+  a tall window the beam's top, which starts above the stage, stays visible).
+- `.scene` fills the stage and is scaled `1.45` around (540, 540). It is `visibility: hidden` until the script has
+  drawn its first frame and set `data-ready` on it.
+- `.grain` covers the window: it's a child of the stage reaching 2000 design px past it on every side (2000 is a
+  multiple of the 200-px tile, so the tiles stay lined up with the stage; that covers windows up to about 4.7:1),
+  `opacity: 0.09`, `mix-blend-mode: overlay`.
+
+### 2. The beam and the floor light
+- The **beam** is a 360 × 400 canvas (bitmap and design size alike) at scene y 118, so its bottom edge (scene y 518)
+  sits 8 px inside the bar's top. Its left edge is written every frame (`--x` = the beam's centre − 180); it's blurred
+  4 px and blended `screen`; its opacity and its lean (`skewX`, from its bottom edge) are written every frame.
+- The **floor light** is an ellipse at scene y 556, 60 tall, `blur(18px)`, blended `screen`; its left edge, width and
+  colour are written every frame (centred under the beam, 1.2 × the pill's width).
+- What the canvas holds is in "The beam, frame by frame" under Motion.
+
+### 3. The bar, the pills and the tabs
+- **Layout from the labels.** The tabs are laid out left to right from x 6 in the bar with a 2-px gap, each as wide as
+  its content: 21 px padding, an 18-px icon, a 10-px gap, the label (Geist 500, 15.5 px, `-0.005em` tracking). The bar
+  ends 6 px after the last tab (the 2-px gap after it, plus 4), as it starts 6 px before the first, and is centred on
+  the stage (left = 540 − width / 2). The widths come from the **measuring copy**: the same tabs at the design's own
+  size in plain px (`.probe-tab`), invisible, read with `offsetWidth` (whole px) on the first frame. Because it's
+  measured at design size, the layout is the same at every window size. With Geist loaded the tabs are 137, 130, 119,
+  109 and 131 px wide at x 6, 145, 277, 398 and 509, and the bar is 646 wide at scene x 217 (±1 px is fine if your
+  font rendering differs).
+- **The bar**: at scene y 510, 62 tall, radius 31; a frosted fill (white 5.5% → 1.5% at 50% → 3%), a 1-px inner top
+  highlight (white 8%), a deep drop shadow (`0 30 60 −20`, black 95%) and a 1-px black 60% outline. Its rim is a 1-px
+  ring painted with a 100° gradient: mint `rgba(150, 255, 222, 0.32)` → white 10% at 18% → white 4% at 50% → lilac
+  `rgba(180, 170, 255, 0.16)`. Rings (`.rim`) are made with a padded box whose content box is masked out
+  (`mask-composite: exclude`).
+- **The rim light**: a 2-px line on the bar's top edge (from y −1), a `radial-gradient(closest-side)` of
+  `rgba(225, 255, 246, 0.9)` fading out; centred under the beam; its width and opacity follow the beam's focus.
+- **Pills** (both 48 tall at y 7, radius 24, placed and sized every frame): the **hover pill** is white 4% with a ring
+  from white 14% to 2% top to bottom, opacity 0 until hovered. The **active pill** is raised glass: white 13% → 5% at
+  55% → 7%, an inner top highlight (white 22%), a soft drop shadow (`0 8 20 −8`, black 90%) and a faint mint glow
+  (`0 0 24 −6`, `rgba(190, 255, 236, 0.25)`); a ring from white 55% (top) → 6% at 55% → mint 25% (bottom); a 2-px
+  spark on its top edge between 18% and 82% of its width (`rgba(235, 255, 250, 0.95)` fading out, blurred 0.5 px); and
+  the **caustic**, the light falling into it from its top centre, whose strength is written every frame.
+- **Tabs** are `<button role="tab">` in a `role="tablist"` (label "Sections"), 62 tall, label colour `#5c5c64` at rest;
+  the script writes their colour, their icon's colour and glow, `aria-selected` and a roving `tabindex` (only the
+  active tab is in the Tab order). Keyboard focus shows a 2-px white 55% ring 3 px inside the bar's top and bottom and
+  4 px outside the tab's sides, radius 28, on `:focus-visible` only.
+
+### 4. The demo cursor
+A white hand with a dark outline (`#111`, 1.3 px), 22 × 24 design px, with a soft drop shadow, drawn in the markup. It
+shows only while the demo plays (`display: none` otherwise); the script moves it and shrinks it to 0.9 for a click.
+Its fingertip is at (8, 4) inside the drawing.
+
+## Motion
+All times in seconds. The state is stepped once per animation frame with `T` = the frame timestamp in seconds (`now /
+1000`, straight from `requestAnimationFrame`); the demo loop counts from the first frame. The frame step is the time
+since the last frame, capped at 0.04 s (1/60 s on the first frame). Springs are stepped with semi-implicit Euler
+(velocity first, then position), once per frame, so they are frame-rate dependent: that's intended.
+
+| Behaviour | Trigger | What happens |
+|---|---|---|
+| Demo | from the start, and whenever nobody has hovered, clicked or pressed a key for 4 s | loop phase `t = (T − start) % 10.6`. The cursor rests at scene (760, 700) until 0.6 s, then glides to a tab (62% along it, y 548) and clicks it: Projects 0.6 → click 1.3, Team 2.6 → 3.2, Library 4.6 → 5.1, Settings 6.5 → 7.0, Overview 8.6 → 9.1. It eases at rate 5.5/s, so it glides past other tabs on the way (they show the hover pill too). A click fires once within 0.2 s of its time and the cursor shows pressed for 0.16 s. While the demo plays, the hovered tab is the one under its fingertip (scene y between 512 and 570) |
+| Hand-back | 4 s after the last hover, click or key | the demo resumes at its own phase (it may glide or click at once). Only entering a tab counts as a hover: a pointer resting on a tab for 4 s is taken over by the demo too (its cursor and hover replace yours), and moving the pointer off a tab doesn't count as input. Keep that |
+| Hover | the pointer enters a tab | that tab is hovered (and the demo holds off); leaving it un-hovers. The hover pill shows only on a hovered tab that isn't active |
+| Select | click (or Enter / Space) on a tab; ←/→ (wrapping), Home, End in the tab list | the active tab changes (and focus follows the arrow keys); the pill's leading edge is the side it moves towards |
+| Active pill | the active tab | two springs, left and right edge. Stiffness eases (rate 6/s) towards 230 for the leading edge and 150 for the trailing one (both start at 300), damping stays critical |
+| Beam focus | the pill's edge speed | above 35 design px/s (both edges together) the focus springs to 0.12 (a thin thread), else to 1; it may overshoot to 1.25 |
+| Bloom | the focus rises past 0.75 | a pulse of 1 that decays to 12% per second; it can fire again once the focus has dropped below 0.4 |
+| Beam position | the pill's centre | follows at rate 9/s; its lean (`skewX`) eases at 6/s towards −0.05° per px of lag, clamped to ±10° |
+| Tab light | each frame | each tab's label and icon light up as the pill covers them and stay lit while active; a hovered tab lights to 0.35 |
+
+**Script part 1.** Every constant, the beam's drawing, the state and its step (the hard bit), and the function that
+writes each frame to the DOM. The order of the calculations matters: the pill moves first, then the hover pill, then
+the focus from the pill's speed, then the beam follows the pill's new centre, then the tabs' light. Use it exactly as
+given. How the animation reaches the page: the page is rendered once and nothing is re-rendered; `frame()` steps the
+state and writes the result straight to the DOM, skipping every style write whose value hasn't changed. Positions and
+sizes go out as unitless custom properties in design px (`--x`, `--w`, `--y`) that the CSS multiplies by `--u`;
+opacity, `color`, `filter`, `background`, `transform` and `display` as style properties; `aria-selected`, `tabindex`
+and `data-ready` as attributes; and the beam on its canvas. The rays' widths, strengths, phases and speeds and the
+dust's positions, sizes, speeds and phases are random, picked once per page load with `Math.random()` in the order the
+code gives (dust first, then rays); don't seed them. Several alpha strings are written at full precision and some with
+`toFixed(3)`: keep each as given.
+```js
+// ---- Constants ----
+// Design px of the 1080 × 1080 stage (before the scene's 1.45× scale); times in seconds. Springs have stiffness k and
+// damping c (per unit mass) and are stepped once per animation frame with semi-implicit Euler.
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, u) => a + (b - a) * u;
+
+const CENTER = 540; // the stage's centre, both axes; the bar is centred on it
+const TAB_START = 6, TAB_GAP = 2, BAR_END = 4; // first tab's x in the bar, gap after each tab, extra after the last gap
+const BEAM_W = 360, BEAM_H = 400; // the beam canvas: bitmap size and design size alike
+// The demo cursor: where it rests, the y it points at on the bar, how far along a tab it points (0–1), the band (stage
+// y) in which it counts as over the bar, and its fingertip inside the 22 × 24 drawing.
+const CURSOR_REST_X = 760, CURSOR_REST_Y = 700, CURSOR_ON_BAR_Y = 548, CURSOR_ON_TAB = 0.62;
+const CURSOR_HIT_TOP = 512, CURSOR_HIT_BOTTOM = 570, CURSOR_TIP_X = 8, CURSOR_TIP_Y = 4;
+
+const DT_FIRST = 1 / 60, DT_MAX = 0.04; // the first frame's step, and the longest step a slow frame may take
+// The demo: [time in the loop, tab, click]. The cursor glides to a tab, then clicks it.
+const DEMO = [[0.6, 1, 0], [1.3, 1, 1], [2.6, 3, 0], [3.2, 3, 1], [4.6, 2, 0], [5.1, 2, 1], [6.5, 4, 0], [7.0, 4, 1], [8.6, 0, 0], [9.1, 0, 1]];
+const LOOP = 10.6;
+const LOOP_REARM = 0.05, CLICK_WINDOW = 0.2, PRESS = 0.16, CURSOR_PRESSED = 0.9; // re-arm window, click window, press time, press scale
+const CURSOR_RATE = 5.5; // the cursor eases towards its target at this rate (per s)
+const HAND_BACK = 4; // a hover, click or key press holds the demo off this long
+
+// The active pill: one spring per edge. The edge in front is stiffer, so it runs ahead and the pill stretches, then the
+// trailing edge catches up. Both start at stiffness PILL_K0 and ease to their values at PILL_K_RATE; damping stays
+// critical (c = 2√k × PILL_DAMPING).
+const PILL_K0 = 300, PILL_K_LEAD = 230, PILL_K_TRAIL = 150, PILL_K_RATE = 6, PILL_DAMPING = 1.0;
+const HOVER_K = 420, HOVER_C = 36, FADE_K = 200, FADE_C = 26; // the hover pill's edges, and its fade
+
+// The beam's focus (1 = open cone, lower = thin thread): when the pill's edges move faster than SPEED_THIN together
+// (design px/s) it springs to FOCUS_THIN, otherwise back to 1, and may overshoot to FOCUS_MAX. Past BLOOM on the way
+// up the beam blooms (a pulse that decays to PULSE_DECAY per second); it can bloom again once it has dropped under REARM.
+const SPEED_THIN = 35, FOCUS_THIN = 0.12, FOCUS_K = 90, FOCUS_C = 17, FOCUS_MAX = 1.25;
+const BLOOM = 0.75, REARM = 0.4, PULSE_DECAY = 0.12;
+// The beam follows the pill's centre at FOLLOW_RATE and leans into its lag (deg per design px, up to TILT_MAX).
+const FOLLOW_RATE = 9, TILT_RATE = 6, TILT = -0.05, TILT_MAX = 10;
+// What the focus does to the beam's opacity, the rim light's width (× the pill's width) and its opacity.
+const BEAM_OPACITY = [0.45, 1], RIM_WIDTH = [0.3, 0.9], RIM_OPACITY = 0.35, RIM_OPACITY_GAIN = 0.65;
+// The pool of light on the floor (× the pill's width; alpha from the focus and the pulse), and the light in the pill.
+const FLOOR_LEFT = 0.6, FLOOR_WIDTH = 1.2, FLOOR_ALPHA = 0.12, FLOOR_FOCUS = 0.14, FLOOR_PULSE = 0.2;
+const CAUSTIC_FOCUS = 0.1, CAUSTIC_PULSE = 0.18;
+// Tabs light up as the pill passes over them and stay lit while active (rate per s). A tab is covered when the pill's
+// centre is within COVER_SPAN of its width from its own centre; covering lights it to COVER at most, a hover to
+// HOVER_LIT. The icon takes its own colour above ICON_ON and glows above GLOW_ON (GLOW px, GLOW_ALPHA).
+const LIT_RATE = 9, COVER_SPAN = 0.7, COVER = 0.6, HOVER_LIT = 0.35, ICON_ON = 0.02, GLOW_ON = 0.05, GLOW = 7, GLOW_ALPHA = 0.55;
+
+// The colours written every frame (channels), and the tabs' font and the wait for it.
+const TAB_DIM = [92, 92, 100], TAB_LIT = [246, 247, 246], ICON_LIT = [196, 255, 232];
+const ICON_GLOW = "150,255,220", FLOOR = "190,255,236", CAUSTIC = "215,255,244";
+const FONT = '500 15.5px "Geist"', FONT_WAIT = 3000;
+const REDUCED = "(prefers-reduced-motion: reduce)";
+
+// ---- Beam ----
+// Drawn on the 360 × 400 canvas every frame: a soft body, nine rays that breathe at their own pace, a bright core
+// thread and 46 motes of dust drifting up. `focus` 1 is the open cone over a resting pill; towards 0 it narrows to the
+// thread. `pulse` is the flash on arrival. The rays and the dust are random, picked once per page load.
+// Dust: position across and up the cone (0–1), radius (px), rise speed (cone heights per s) and phase.
+const DUST = Array.from({ length: 46 }, () => ({ x: Math.random(), y: Math.random(), s: 0.4 + Math.random() * 1.3, v: 0.03 + Math.random() * 0.08, p: Math.random() * 6 }));
+// Rays: offset across the cone (−1 to 1), width (× the cone's foot), strength, phase and breathing speed.
+const RAYS = Array.from({ length: 9 }, (_, i) => ({ o: (i - 4) / 4, w: 0.08 + Math.random() * 0.12, a: 0.25 + Math.random() * 0.5, p: Math.random() * 6, s: 0.6 + Math.random() * 0.8 }));
+
+// T the clock (s), w the active pill's width (the open cone's foot is 95% of it), focus (clamped to 0–1 here), pulse 1 → 0.
+function drawBeam(g, T, w, focus, pulse) {
+  const W = BEAM_W, H = BEAM_H;
+  g.clearRect(0, 0, W, H);
+  const f = clamp(focus);
+  const top = 4 + 6 * f, bot = lerp(14, w * 0.95, f);
+  g.globalCompositeOperation = "lighter";
+  // a trapezoid from the top edge (half-width half0) to the bottom edge (half1), brightest at the foot
+  const body = (half0, half1, alpha) => {
+    const gr = g.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, "rgba(220,255,246,0)");
+    gr.addColorStop(0.45, `rgba(220,255,246,${alpha * 0.25})`);
+    gr.addColorStop(0.92, `rgba(225,255,248,${alpha})`);
+    gr.addColorStop(1, `rgba(240,255,252,${alpha * 1.2})`);
+    g.fillStyle = gr;
+    g.beginPath();
+    g.moveTo(W / 2 - half0, 0);
+    g.lineTo(W / 2 + half0, 0);
+    g.lineTo(W / 2 + half1, H);
+    g.lineTo(W / 2 - half1, H);
+    g.closePath();
+    g.fill();
+  };
+  body(top / 2, bot / 2, 0.07 + 0.05 * pulse);
+  // each ray breathes at its own pace
+  RAYS.forEach((r) => {
+    const br = 0.55 + 0.45 * Math.sin(T * r.s + r.p);
+    const cx = r.o * bot * 0.36;
+    const hw = bot * r.w * 0.5;
+    const gr = g.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, "rgba(230,255,250,0)");
+    gr.addColorStop(0.6, `rgba(230,255,250,${0.04 * r.a * br * f})`);
+    gr.addColorStop(1, `rgba(235,255,252,${(0.14 * r.a * br * f + 0.1 * pulse).toFixed(3)})`);
+    g.fillStyle = gr;
+    g.beginPath();
+    g.moveTo(W / 2 + cx * 0.05 - 1, 0);
+    g.lineTo(W / 2 + cx * 0.05 + 1, 0);
+    g.lineTo(W / 2 + cx + hw, H);
+    g.lineTo(W / 2 + cx - hw, H);
+    g.closePath();
+    g.fill();
+  });
+  // the bright core thread: what stays when the beam focuses while the pill moves
+  body(1, lerp(3, bot * 0.14, f), 0.16 + 0.12 * (1 - f) + 0.15 * pulse);
+  g.globalCompositeOperation = "source-over";
+  DUST.forEach((d) => {
+    const yy = (((d.y - T * d.v) % 1) + 1) % 1, half = lerp(top, bot, yy) / 2, xx = W / 2 + (d.x - 0.5) * 2 * half * 0.9 + Math.sin(T + d.p) * 3;
+    g.fillStyle = `rgba(235,255,250,${((0.12 + 0.45 * yy) * (0.5 + 0.5 * Math.sin(T * 2 + d.p)) * f).toFixed(3)})`;
+    g.beginPath();
+    g.arc(xx, yy * H, d.s, 0, Math.PI * 2);
+    g.fill();
+  });
+}
+
+// ---- State ----
+// Stepped once per animation frame. Positions are design px: tab and pill x along the bar, the beam and the cursor in
+// stage x.
+const spring = (k, c) => ({ x: 0, v: 0, k, c });
+const pull = (sp, target, dt) => { sp.v += (sp.k * (target - sp.x) - sp.c * sp.v) * dt; sp.x += sp.v * dt; }; // one semi-implicit Euler step
+const snap = (sp, x) => { sp.x = x; sp.v = 0; };
+
+const s = {
+  X: [], Wd: [], BW: 0, // each tab's left edge and width along the bar, and the bar's width (set by layout)
+  L: spring(PILL_K0, 0), R: spring(PILL_K0, 0), // the active pill's two edges (damping is set from the stiffness every frame)
+  HL: spring(HOVER_K, HOVER_C), HR: spring(HOVER_K, HOVER_C), HO: spring(FADE_K, FADE_C), // the hover pill's edges and its opacity
+  FO: { x: 1, v: 0 }, // the beam's focus
+  BM: 0, SK: 0, // the beam's x on the stage and its tilt (deg)
+  bloomed: true, pulse: 0, // the arrival pulse
+  act: 0, hov: -1, // active tab, hovered tab (−1 for none)
+  dirK: 0, // which way the pill last set off (1 right, −1 left, 0 not yet)
+  lit: [], // how lit each tab is
+  user: false, lastUser: -9, // whether someone is using it, and when they last did (s, performance.now() clock)
+  start: null, last: null, beamT: 0, // the first frame's time, the last frame's, the time the beam is drawn at
+  demoK: -1, cx: CURSOR_REST_X, cy: CURSOR_REST_Y, demo: true, down: false, // the last click the demo fired, its cursor, whether it shows, whether pressed
+};
+
+/** The bar's left edge on the stage. */
+const barLeft = () => CENTER - s.BW / 2;
+
+/** Lays the tabs out from their widths (design px), left to right with a 2-px gap. */
+function layout(widths) {
+  let x = TAB_START;
+  s.X = [];
+  s.Wd = [];
+  widths.forEach((w) => {
+    s.X.push(x);
+    s.Wd.push(w);
+    x += w + TAB_GAP;
+  });
+  s.BW = x + BAR_END;
+  s.lit = widths.map((_, i) => (i === s.act ? 1 : 0));
+}
+
+function select(i) {
+  if (i === s.act) return;
+  s.dirK = i > s.act ? 1 : -1;
+  s.act = i;
+}
+
+/** Someone hovered, clicked or pressed a key: the demo holds off for HAND_BACK seconds. `now` is performance.now() (ms). */
+function touch(now) {
+  s.user = true;
+  s.lastUser = now / 1000;
+}
+
+/** One frame at time `now` (ms, the animation frame's timestamp). */
+function step(now, reduced) {
+  const T = now / 1000;
+  if (s.start === null) {
+    s.start = T;
+    s.beamT = T;
+    s.L.x = s.X[0];
+    s.R.x = s.X[0] + s.Wd[0];
+    s.BM = barLeft() + s.X[0] + s.Wd[0] / 2;
+    s.HL.x = s.L.x;
+    s.HR.x = s.R.x;
+  }
+  const dt = s.last === null ? DT_FIRST : Math.min(DT_MAX, T - s.last);
+  s.last = T;
+  // with reduced motion the rays and the dust hold still
+  if (!reduced) s.beamT = T;
+
+  // the demo: when nobody has touched it for HAND_BACK seconds, its cursor glides to each tab and clicks it
+  let tx = s.cx, ty = s.cy;
+  s.down = false;
+  s.demo = !reduced && (!s.user || T - s.lastUser > HAND_BACK);
+  if (s.demo) {
+    s.user = false;
+    const t = (T - s.start) % LOOP;
+    let target = null;
+    for (let k = 0; k < DEMO.length; k++) {
+      const [tt, i, c] = DEMO[k];
+      if (t >= tt) {
+        target = i;
+        if (c && s.demoK !== k && t < tt + CLICK_WINDOW) {
+          s.demoK = k;
+          select(i);
+        }
+      }
+    }
+    if (t < LOOP_REARM) s.demoK = -1;
+    if (target !== null) {
+      tx = barLeft() + s.X[target] + s.Wd[target] * CURSOR_ON_TAB;
+      ty = CURSOR_ON_BAR_Y;
+    } else {
+      tx = CURSOR_REST_X;
+      ty = CURSOR_REST_Y;
+    }
+    s.down = DEMO.some((d) => d[2] && t >= d[0] && t < d[0] + PRESS);
+    s.cx += (tx - s.cx) * Math.min(1, dt * CURSOR_RATE);
+    s.cy += (ty - s.cy) * Math.min(1, dt * CURSOR_RATE);
+    const bx = s.cx - barLeft();
+    s.hov = -1;
+    if (s.cy > CURSOR_HIT_TOP && s.cy < CURSOR_HIT_BOTTOM)
+      s.X.forEach((x, i) => {
+        if (bx >= x && bx <= x + s.Wd[i]) s.hov = i;
+      });
+  }
+
+  // the active pill: the edge in front is stiffer, so it runs ahead and the pill stretches
+  const { L, R, HL, HR, HO, FO } = s;
+  const lead = s.dirK > 0 ? "R" : "L";
+  const kL = lead === "L" ? PILL_K_LEAD : PILL_K_TRAIL, kR = lead === "R" ? PILL_K_LEAD : PILL_K_TRAIL;
+  L.k += (kL - L.k) * Math.min(1, dt * PILL_K_RATE);
+  R.k += (kR - R.k) * Math.min(1, dt * PILL_K_RATE);
+  L.c = 2 * Math.sqrt(L.k) * PILL_DAMPING;
+  R.c = 2 * Math.sqrt(R.k) * PILL_DAMPING;
+  pull(L, s.X[s.act], dt);
+  pull(R, s.X[s.act] + s.Wd[s.act], dt);
+  if (reduced) {
+    snap(L, s.X[s.act]);
+    snap(R, s.X[s.act] + s.Wd[s.act]);
+  }
+
+  // the hover pill: only on a tab that isn't active; it follows softly and fades in and out
+  const hv = s.hov >= 0 && s.hov !== s.act;
+  if (hv) {
+    pull(HL, s.X[s.hov], dt);
+    pull(HR, s.X[s.hov] + s.Wd[s.hov], dt);
+    if (reduced) {
+      snap(HL, s.X[s.hov]);
+      snap(HR, s.X[s.hov] + s.Wd[s.hov]);
+    }
+  }
+  pull(HO, hv ? 1 : 0, dt);
+
+  // the beam focuses into a thread while the pill moves fast, and blooms with a pulse when it opens up again
+  const speed = Math.abs(L.v) + Math.abs(R.v);
+  const fT = speed > SPEED_THIN ? FOCUS_THIN : 1;
+  FO.v += (FOCUS_K * (fT - FO.x) - FOCUS_C * FO.v) * dt;
+  FO.x += FO.v * dt;
+  const fo = clamp(FO.x, 0, FOCUS_MAX);
+  if (fo > BLOOM && !s.bloomed) {
+    s.bloomed = true;
+    s.pulse = 1;
+  }
+  if (fo < REARM) s.bloomed = false;
+  s.pulse *= Math.pow(PULSE_DECAY, dt);
+
+  // it follows the pill's centre with its own lag, leaning into the lag
+  const w = R.x - L.x;
+  const midT = barLeft() + L.x + w / 2;
+  s.BM += (midT - s.BM) * Math.min(1, dt * FOLLOW_RATE);
+  s.SK += ((midT - s.BM) * TILT - s.SK) * Math.min(1, dt * TILT_RATE);
+  if (reduced) {
+    s.BM = midT;
+    s.SK = 0;
+  }
+
+  // tabs light up while active, and fade back when the pill leaves
+  s.lit.forEach((l, i) => {
+    s.lit[i] = l + ((i === s.act ? 1 : 0) - l) * Math.min(1, dt * LIT_RATE);
+  });
+  return { w, fo };
+}
+
+// ---- Frame ----
+// Writes the frame to the DOM. Positions and sizes go out as unitless custom properties in design px (the CSS
+// multiplies them by --u); opacity, colours, the beam's tilt and the canvas are written directly. Every write is
+// skipped when the value hasn't changed.
+const scene = document.querySelector(".scene");
+const part = (name) => scene.querySelector(`[data-part="${name}"]`);
+const parts = (name) => [...scene.querySelectorAll(`[data-part="${name}"]`)];
+const beam = part("beam"), floor = part("floor"), bar = part("bar"), rimlight = part("rimlight");
+const hover = part("hover"), active = part("active"), caustic = part("caustic");
+const tablist = part("tablist"), cursor = part("cursor");
+const tabs = parts("tab"), probes = parts("probe");
+const icons = tabs.map((tab) => tab.querySelector('[data-part="icon"]'));
+const g = beam.getContext("2d");
+const query = matchMedia(REDUCED);
+let raf = 0;
+
+const seen = new WeakMap();
+/** A style property or a custom property ('' removes it). */
+function css(el, prop, value) {
+  const v = String(value);
+  let m = seen.get(el);
+  if (!m) seen.set(el, (m = new Map()));
+  if (m.get(prop) === v) return;
+  m.set(prop, v);
+  if (v === "") el.style.removeProperty(prop);
+  else el.style.setProperty(prop, v);
+}
+const attr = (el, name, value) => {
+  if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+};
+/** A colour between two, channels rounded. */
+const mix = (a, b, u) => `rgb(${Math.round(lerp(a[0], b[0], u))},${Math.round(lerp(a[1], b[1], u))},${Math.round(lerp(a[2], b[2], u))})`;
+
+function frame(now) {
+  if (s.start === null) {
+    layout(probes.map((p) => p.offsetWidth));
+    css(bar, "--x", barLeft());
+    css(bar, "--w", s.BW);
+    tabs.forEach((tab, i) => {
+      css(tab, "--x", s.X[i]);
+      css(tab, "--w", s.Wd[i]);
+    });
+  }
+  const { w, fo } = step(now, query.matches);
+  const f = clamp(fo);
+
+  // the demo cursor
+  if (s.demo) {
+    css(cursor, "display", "");
+    css(cursor, "--x", s.cx - CURSOR_TIP_X);
+    css(cursor, "--y", s.cy - CURSOR_TIP_Y);
+    css(cursor, "transform", `scale(${s.down ? CURSOR_PRESSED : 1})`);
+  } else css(cursor, "display", "none");
+
+  // the pills
+  css(active, "--x", s.L.x);
+  css(active, "--w", w);
+  css(hover, "--x", s.HL.x);
+  css(hover, "--w", s.HR.x - s.HL.x);
+  css(hover, "opacity", clamp(s.HO.x));
+
+  // the beam, the pool of light under it, the light line on the rim and the light in the pill
+  css(beam, "--x", s.BM - BEAM_W / 2);
+  css(beam, "opacity", lerp(BEAM_OPACITY[0], BEAM_OPACITY[1], f));
+  css(beam, "transform", `skewX(${clamp(s.SK, -TILT_MAX, TILT_MAX).toFixed(2)}deg)`);
+  drawBeam(g, s.beamT, w, fo, s.pulse);
+  css(floor, "--x", s.BM - w * FLOOR_LEFT);
+  css(floor, "--w", w * FLOOR_WIDTH);
+  css(floor, "background", `radial-gradient(closest-side,rgba(${FLOOR},${(FLOOR_ALPHA + FLOOR_FOCUS * f + FLOOR_PULSE * s.pulse).toFixed(3)}),transparent)`);
+  const rw = w * lerp(RIM_WIDTH[0], RIM_WIDTH[1], f);
+  css(rimlight, "--x", s.BM - barLeft() - rw / 2);
+  css(rimlight, "--w", rw);
+  css(rimlight, "opacity", (RIM_OPACITY + RIM_OPACITY_GAIN * f).toFixed(3));
+  css(caustic, "background", `radial-gradient(60% 90% at 50% 0%,rgba(${CAUSTIC},${(CAUSTIC_FOCUS * f + CAUSTIC_PULSE * s.pulse).toFixed(3)}),transparent 70%)`);
+
+  // labels and icons light up as the pill covers them
+  tabs.forEach((tab, i) => {
+    const c = s.X[i] + s.Wd[i] / 2, cov = clamp(1 - Math.abs(c - (s.L.x + w / 2)) / (s.Wd[i] * COVER_SPAN));
+    const lit = s.lit[i];
+    const k = Math.max(cov * COVER, lit), hk = s.hov === i && i !== s.act ? HOVER_LIT : 0, v = Math.max(k, hk);
+    css(tab, "color", mix(TAB_DIM, TAB_LIT, v));
+    css(icons[i], "color", lit > ICON_ON ? mix(TAB_DIM, ICON_LIT, lit) : "");
+    css(icons[i], "filter", lit > GLOW_ON ? `drop-shadow(0 0 calc(${GLOW * lit} * var(--u)) rgba(${ICON_GLOW},${GLOW_ALPHA * lit}))` : "none");
+    attr(tab, "aria-selected", String(i === s.act));
+    attr(tab, "tabindex", i === s.act ? "0" : "-1");
+  });
+  attr(scene, "data-ready", "");
+  raf = requestAnimationFrame(frame);
+}
+```
+
+**Script part 2.** Write it below part 1, from this spec. It uses part 1's `s` (the state), `tabs` and `tablist` (the
+five tab buttons and their `role="tablist"` parent), `select(i)`, `touch(now)`, `frame`, `raf`, `FONT` and `FONT_WAIT`.
+Add nothing else: no pointermove, touch or focus handlers, no resize handler (the CSS rescales by itself), no cleanup.
+
+### M1 · Input
+- On each tab `i`: `pointerenter` sets `s.hov = i` and calls `touch(performance.now())`; `pointerleave` sets `s.hov =
+  -1`; `click` calls `select(i)` and then `touch(performance.now())`. (The tabs are `<button>`s, so Enter and Space
+  click them.)
+- On the tab list, `keydown`: with `n = tabs.length`, `from = tabs.indexOf(document.activeElement)` and `at = from < 0 ?
+  s.act : from`, the target is `(at + 1) % n` for `ArrowRight`, `(at + n − 1) % n` for `ArrowLeft`, `0` for `Home`,
+  `n − 1` for `End`, and none for any other key. If there's a target and none of Alt, Ctrl or Meta is down:
+  `preventDefault()`, `select(target)` and `tabs[target].focus()`. (Focus follows the arrow keys; the active tab
+  changes with it.)
+- On `window`, `keydown` (any key, also the arrows above): `if (s.demo) s.hov = -1` (the demo's hover goes with its
+  cursor), then `touch(performance.now())`.
+
+### M2 · Start
+Wait for Geist Medium, then start the loop: `const fontReady = document.fonts ? Promise.race([document.fonts.load(FONT),
+new Promise((r) => setTimeout(r, FONT_WAIT))]) : Promise.resolve()`, then `fontReady.catch(() => {}).then(() => { raf =
+requestAnimationFrame(frame); })`. Nothing else starts the loop. `frame` measures the tabs on its first call and keeps
+asking for the next frame itself.
+
+### The beam, frame by frame (what `drawBeam` draws)
+The canvas is cleared and redrawn every frame from `T`, the pill's width `w`, the focus `f` (clamped to 0 … 1) and the
+pulse. The cone's top half-width is `(4 + 6f) / 2` and its foot `lerp(14, 0.95 w, f) / 2`, so at `f` = 1 it spans 95%
+of the pill and at low `f` it's a 14-px sliver. Drawn additively (`lighter`): the **body** (a trapezoid with a vertical
+gradient: 0 at the top, 25% of its alpha at 45%, full at 92%, 120% at the foot; alpha 0.07 + 0.05 pulse), nine
+**rays** spread across 36% of the foot, each a thin wedge from near the centre at the top, its alpha breathing
+`0.55 + 0.45 sin(T s + p)`, scaled by `f`, plus 0.1 pulse at the foot; and the **core thread** (half-width 1 at the top
+to `lerp(3, 0.14 × foot, f)` at the bottom, alpha 0.16 + 0.12 (1 − f) + 0.15 pulse), which is what stays when the beam
+is focused. Then normally (`source-over`) 46 **dust** motes rise through the cone, drifting ±3 px sideways, brighter
+towards the foot and twinkling, scaled by `f`.
+
+### Reduced motion (`prefers-reduced-motion: reduce`)
+Part 1 reads it every frame, so switching it live takes effect at once: no demo (the cursor never shows; the bar waits
+for the user), the active pill, the hover pill and the beam jump to the chosen tab instead of travelling, so the beam
+never thins or blooms, and the rays and dust hold still where they were. The labels' and icons' light and the hover
+pill's opacity still fade.
+
+## Done when
+- [ ] The reply is one sentence, the whole page as one HTML artifact (Claude) or one `html` code block (ChatGPT and
+      others), then the one line for the reader. No zip, no project, no files written with tools.
+- [ ] At a 1080 × 1080 window (u = 1), on the first frame: the bar spans stage x 71.7–1008.4 and y 496.5–586.4 (scene
+      x 217–863, y 510–572), the five tabs at the x and widths given in Layout → 3; Overview is in the raised pill
+      with a near-white label and a mint, glowing icon; the others are grey (`#5c5c64`); the beam rises from
+      Overview's pill past the top of the window, a cone of soft rays with dust, 95% of the pill's width at its foot; a
+      soft mint pool of light under the pill; a light line on the rim above it; the hand cursor rests below right of the
+      bar (its top-left at scene (752, 696)). At 1440 × 900 the bar is 780.6 × 74.9 at (329.7, 413.8).
+- [ ] The demo, timed from the first frame: at 0.6 s the cursor leaves its rest spot and glides to Projects, a faint
+      pill fades in under it; at 1.3 s it clicks (the hand shrinks for a moment) and the pill travels there, stretching
+      ahead (126 px wide at 1.4 s) and settling within about 0.5 s while the beam thins to a thread (focus about 0.14
+      at 1.8 s), follows with a slight lean, and blooms back with a flash from about 2.0 s. Then Team (click 3.2 s),
+      Library (5.1), Settings (7.0), Overview (9.1); the cursor drifts back towards its rest spot at 10.6 s and the
+      loop repeats.
+- [ ] Hovering a tab with the mouse hides the demo cursor and shows the faint pill under that tab; clicking a tab moves
+      the light there (also mid-travel, reversing); 4 s after the last hover, click or key the demo cursor reappears
+      and the loop carries on at its own phase.
+- [ ] Keyboard: Tab focuses the active tab (white ring); ←/→ move focus and selection (wrapping), Home / End go to the
+      first / last tab; Enter and Space select the focused tab; the demo cursor hides while you use the keys. A mouse
+      click never shows a ring.
+- [ ] On a wide window (1920 × 1080, 2560 × 1080) the stage is centred at full height and the backdrop and grain
+      continue past its sides; on a 390 × 844 phone the bar is about 338 px wide in the middle and the beam rises above
+      the stage; no visible edge where the stage ends.
+- [ ] The bar, the tabs and the cursor are never cut off, and nothing scrolls, at 1280 × 720, 1440 × 900, 1920 × 1080,
+      2560 × 1080, 768 × 1024, 375 × 667 and 667 × 375. (The beam's faint top runs past the window's top edge on
+      landscape windows: that's the design.)
+- [ ] Reduced motion: no demo cursor; clicking a tab moves the pill and the beam there at once (no thread, no bloom);
+      the rays and dust are still.
+- [ ] One animation-frame loop (about 60 calls a second); no console errors or warnings.
+
+## Make it yours
+- **Tabs:** each tab is a `<button>` in the tab list (an icon `<use>` and a label) plus a copy of its label in
+  `.probe` (the measuring copy). Change a label in both; to add or remove a tab, do it in both, and add an icon's paths
+  as a `<symbol>`. The bar sizes itself to the labels. The tabs only move the light: hook your content into `select()`
+  or the tabs' click handler. The tab list's label ("Sections") is on the `role="tablist"` element.
+- **Colours and glass:** the tokens (backdrop, bar, rim tint, pills, grain, focus ring, cursor); the colours that
+  animate (labels, icons, floor, caustic) are `TAB_DIM`, `TAB_LIT`, `ICON_LIT`, `ICON_GLOW`, `FLOOR` and `CAUSTIC`; the
+  beam's own are in `drawBeam`.
+- **Timing and feel:** the demo (`DEMO`, `LOOP`, `HAND_BACK`), the pill's springs (`PILL_K_LEAD`, `PILL_K_TRAIL`), when
+  the beam thins (`SPEED_THIN`, `FOCUS_THIN`, `FOCUS_K` / `FOCUS_C`), the bloom and pulse (`BLOOM`, `PULSE_DECAY`), how
+  it follows and leans (`FOLLOW_RATE`, `TILT`).
+- **No demo:** in `step()`, set `s.demo = false` instead of its condition.
+- **Size:** the stage is 1080 × 1080 design px and fills the window's shorter side (`--u` in the tokens); the scene is
+  drawn at 1.45× (`--scene-scale`).

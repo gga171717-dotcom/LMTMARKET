@@ -1,0 +1,102 @@
+navbar.component"use client";
+import { useState, useEffect } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+
+interface NavBarProps {
+  setActivePage?: (page: "home" | "about" | "store" | "work" | "contact") => void;
+}
+
+export const NavBar = ({ setActivePage }: NavBarProps) => {
+  const [active, setActive] = useState("home");
+  const { scrollY } = useScroll();
+
+  // Morphing values based on scroll
+  const navbarScale = useTransform(scrollY, [0, 100], [1, 0.95]);
+  const navbarBlur = useTransform(scrollY, [0, 100], ["blur(8px)", "blur(16px)"]);
+  const navbarPadding = useTransform(scrollY, [0, 100], ["1rem 2rem", "0.75rem 1.5rem"]);
+  const navbarBg = useTransform(
+    scrollY,
+    [0, 100],
+    ["rgba(255, 255, 255, 0.02)", "rgba(0, 0, 0, 0.8)"]
+  );
+  const navbarBorder = useTransform(
+    scrollY,
+    [0, 100],
+    ["rgba(255, 255, 255, 0.1)", "rgba(0, 191, 255, 0.3)"]
+  );
+  const shadowIntensity = useTransform(scrollY, [0, 100], [0, 0.3]);
+  const yOffset = useTransform(scrollY, [0, 200], [0, -10]);
+
+  const handlePageChange = (page: "home" | "about" | "store" | "work" | "contact") => {
+    setActive(page);
+    if (setActivePage) setActivePage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const navItems = [
+    { name: "Home", page: "home" as const },
+    { name: "About", page: "about" as const },
+    { name: "Store", page: "store" as const },
+    { name: "Work", page: "work" as const },
+    { name: "Contact", page: "contact" as const },
+  ];
+
+  return (
+    <motion.nav
+      style={{
+        scale: navbarScale,
+        backdropFilter: navbarBlur,
+        padding: navbarPadding,
+        backgroundColor: navbarBg,
+        borderColor: navbarBorder,
+        boxShadow: useTransform(shadowIntensity, (v) => `0 8px 32px rgba(0,0,0,${v})`),
+        y: yOffset,
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6 md:gap-8 rounded-full border backdrop-blur-xl shadow-2xl"
+    >
+      {/* Logo */}
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => handlePageChange("home")}>
+        <div className="w-6 h-6 bg-gradient-to-br from-cyan-400 to-pink-500 rounded-lg rotate-45" />
+        <span className="text-xl font-bold tracking-tight">
+          <span className="text-cyan-400">LMT</span>
+          <span className="text-white">STORE</span>
+        </span>
+      </div>
+
+      {/* Desktop Nav Links */}
+      <div className="hidden md:flex items-center gap-6">
+        {navItems.map((item) => (
+          <motion.button
+            key={item.name}
+            whileHover={{ y: -2, color: "#0ea5e9" }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            onClick={() => handlePageChange(item.page)}
+            className={`relative text-sm font-medium transition-colors duration-300 ${
+              active === item.page ? "text-cyan-400" : "text-gray-300 hover:text-cyan-400"
+            }`}
+          >
+            {item.name}
+            {active === item.page && (
+              <motion.span
+                layoutId="activeNav"
+                className="absolute -bottom-2 left-0 w-full h-[2px] bg-cyan-400 rounded-full"
+                transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              />
+            )}
+          </motion.button>
+        ))}
+      </div>
+
+      {/* CTA Button */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="group relative overflow-hidden rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-medium backdrop-blur-xl transition-all duration-500 hover:border-cyan-400/40 hover:shadow-lg hover:shadow-cyan-500/20"
+        onClick={() => handlePageChange("contact")}
+      >
+        Dashboard
+      </motion.button>
+    </motion.nav>
+  );
+};

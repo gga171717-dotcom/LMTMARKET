@@ -1,43 +1,114 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ========== GLOBAL STYLES ========== */
+/* ============================================================
+   TOKENS
+   ============================================================ */
 :root {
-  --color-primary: #00BFFF;      /* deep sky blue */
-  --color-secondary: #FF69B4;    /* hot pink */
-  --color-accent: #ef4444;       /* red */
-  --color-dark: #0a0a0a;
-  --color-card-bg: rgba(255, 255, 255, 0.03);
-  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+  --bg: #050505;
+  --surface: #0b0b0d;
+  --surface-2: #111114;
+  --white: #f5f5f5;
+  --muted: #85858c;
+  --line: rgba(255, 255, 255, 0.1);
+  --blue: #00bfff;
+  --purple: #7c3aed;
+  --red: #ef4444;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+  background: var(--bg);
 }
 
 body {
-  background: var(--color-dark);
-  color: #ffffff;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--white);
+  font-family: "Inter", system-ui, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ========== TYPOGRAPHY ========== */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 800;
-  letter-spacing: -0.02em;
+button, input, textarea {
+  font: inherit;
+}
+button { border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+::selection { color: #000; background: var(--blue); }
+
+/* ============================================================
+   TYPOGRAPHY (Ambani-style)
+   ============================================================ */
+.font-display,
+h1, h2, h3, h4 {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+.font-mono, code, pre, kbd {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
-/* Custom Gradient Text */
-.gradient-text {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+.hero-h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 900;
+  font-size: clamp(64px, 12vw, 160px);
+  letter-spacing: -0.075em;
+  line-height: 0.88;
+  background: linear-gradient(90deg, #fff 0%, #00bfff 30%, #a855f7 60%, #00bfff 80%, #fff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+.hero-description {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  color: var(--muted);
+  font-size: clamp(14px, 1.2vw, 18px);
+  line-height: 1.8;
+}
+
+.section-title-text {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 900;
+  font-size: clamp(40px, 6vw, 76px);
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+}
+
+.section-subtitle {
+  max-width: 550px;
+  margin: 20px auto 0;
+  color: #777;
+  line-height: 1.8;
+  font-size: 15px;
+}
+
+.text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.45);
+}
+
+.text-shimmer {
+  background: linear-gradient(90deg, #fff 0%, #00bfff 25%, #a855f7 50%, #00bfff 75%, #fff 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -45,184 +116,737 @@ h1, h2, h3, h4, h5, h6 {
   animation: shimmer 4s linear infinite;
 }
 
-@keyframes shimmer {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Fire Heading Effect (pink/red/blue glow) */
 .fire-heading {
-  animation: fireGlow 1.5s ease-in-out infinite;
-  display: inline-block;
+  background: linear-gradient(90deg, #ff6b00, #ff2d00, #ff0055, #ff6b00);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fireMove 3s linear infinite;
 }
 
-@keyframes fireGlow {
-  0%, 100% { 
-    text-shadow: 0 0 5px #FF69B4, 0 0 10px #ef4444, 0 0 15px #00BFFF;
-  }
-  50% { 
-    text-shadow: 0 0 15px #FF69B4, 0 0 25px #ef4444, 0 0 35px #00BFFF;
-  }
+@keyframes shimmer { to { background-position: 200% center; } }
+@keyframes fireMove { to { background-position: 200% center; } }
+@keyframes blink { 50% { opacity: 0; } }
+.cursor-blink { animation: blink 1s step-end infinite; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.hero-buttons {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-/* Flash animation for navbar clicks */
-.animate-flash {
-  animation: flash 0.3s ease-out;
+.button-primary,
+.button-ghost {
+  min-height: 50px;
+  padding: 0 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: 0.35s var(--ease);
+  letter-spacing: -0.01em;
 }
 
-@keyframes flash {
-  0% { opacity: 0; background: rgba(255,255,255,0); }
-  50% { opacity: 1; background: rgba(255,255,255,0.3); }
-  100% { opacity: 0; background: rgba(255,255,255,0); }
+.button-primary {
+  color: #000;
+  background: #fff;
+}
+.button-primary:hover {
+  transform: translateY(-3px);
+  background: var(--blue);
+  box-shadow: 0 15px 45px rgba(0, 191, 255, 0.25);
 }
 
-/* ========== GLASSMORPHISM CARDS ========== */
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.5rem;
-  transition: all 0.3s var(--ease-smooth);
+.button-ghost {
+  color: #fff;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
 }
-
-.glass-card:hover {
+.button-ghost:hover {
+  transform: translateY(-3px);
   border-color: rgba(0, 191, 255, 0.5);
-  transform: translateY(-4px);
-  box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
 }
 
-/* ========== CUSTOM SCROLLBAR ========== */
-::-webkit-scrollbar {
-  width: 6px;
+/* ============================================================
+   HERO META
+   ============================================================ */
+.hero-meta {
+  width: min(620px, 100%);
+  margin: 90px auto 0;
+  padding-top: 25px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  gap: 20px;
 }
-::-webkit-scrollbar-track {
-  background: #1a1a1a;
+.hero-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  border-radius: 10px;
+.hero-meta strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 24px;
+  letter-spacing: -0.04em;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent);
+.hero-meta span {
+  color: #666;
+  font-size: 10px;
+  letter-spacing: 1.5px;
 }
 
-/* ========== LAYERED BACKGROUND (noise, gradient orbs) ========== */
+/* ============================================================
+   GLASS CARD
+   ============================================================ */
+.glass-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+/* ============================================================
+   BACKGROUND — grid + orbs + scanlines
+   ============================================================ */
 .bg-layered {
-  position: relative;
-  background: var(--color-dark);
-}
-.bg-layered::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(circle at 20% 40%, rgba(0, 191, 255, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(255, 105, 180, 0.06) 0%, transparent 50%),
-    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 20px);
-  pointer-events: none;
-  z-index: 0;
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(0, 191, 255, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 30%, rgba(168, 85, 247, 0.08), transparent 60%),
+    radial-gradient(700px 400px at 50% 110%, rgba(239, 68, 68, 0.06), transparent 60%),
+    #050505;
 }
 
-/* Noise texture overlay */
+.site-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 70px 70px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
 .noise::after {
   content: "";
   position: fixed;
   inset: 0;
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  opacity: 0.03;
   pointer-events: none;
   z-index: 1;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ========== ANIMATED CODE BACKGROUND ========== */
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.section { padding: 150px 24px; }
+.dark-section { background: rgba(255, 255, 255, 0.012); }
+.container { width: min(1180px, 100%); margin: 0 auto; }
+
+/* ============================================================
+   MARQUEE
+   ============================================================ */
 @keyframes scrollCode {
   0% { transform: translateY(0); }
   100% { transform: translateY(-50%); }
 }
-.animate-scrollCode {
-  animation: scrollCode 40s linear infinite;
-}
 
-/* ========== HERO PARALLAX & MOUSE GLOW ========== */
-.mouse-glow {
-  transition: background 0.2s ease;
+/* ============================================================
+   GLOW SPIN
+   ============================================================ */
+@keyframes glow-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
+.glow-spin { animation: glow-spin 4s linear infinite; }
+.glow-spin-reverse { animation: glow-spin 4s linear infinite reverse; }
 
-/* ========== PRODUCT CARD ROTATION (3D) ========== */
-.rotate-product {
-  transform-style: preserve-3d;
-  transition: transform 0.03s linear;
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 191, 255, 0.3);
+  border-radius: 999px;
 }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 191, 255, 0.6); }
 
-/* ========== INFINITE SLIDER (marquee) ========== */
-@keyframes marqueeLeft {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-@keyframes marqueeRight {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0); }
-}
-.marquee-left {
-  animation: marqueeLeft 25s linear infinite;
-}
-.marquee-right {
-  animation: marqueeRight 25s linear infinite;
-}
-
-/* ========== RESPONSIVE UTILITIES ========== */
-@media (max-width: 768px) {
-  .glass-card {
-    border-radius: 1rem;
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 760px) {
+  .hero-meta {
+    margin-top: 65px;
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 12px;
   }
-  .fire-heading {
-    font-size: 2rem !important;
+  .section { padding: 100px 18px; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-/* ========== BUTTON HOVER MAGNETIC EFFECT (extra) ========== */
-.magnetic-button {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+/* ============================================================
+   GLOWING TEXT STROKE — ភ្លើងដេញតាម outline អក្សរ
+   ============================================================ */
+@keyframes stroke-run {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
 }
-/* ========== EFFECT (extra) ========== */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
-/* Fire Heading Effect */
-@keyframes fireGlow {
-  0%, 100% { text-shadow: 0 0 10px #663838, 0 0 20px #6b5555; }
-  50% { text-shadow: 0 0 20px #4b3737, 0 0 40px #0ea5e9, 0 0 60px #ff0080; }
+@keyframes glow-flicker {
+  0%, 100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
 }
-.fire-heading {
-  animation: fireGlow 2.5s ease-in-out infinite;
+
+.glowing-stroke-text {
+  animation: glow-flicker 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.6))
+          drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
+}
+
+.glowing-stroke-text .stroke-animated {
+  animation: stroke-run 3s linear infinite;
+}
+
+.glowing-stroke-text .stroke-animated-reverse {
+  animation: stroke-run 3s linear infinite reverse;
+}
+/* ============================================================
+   ELECTRIC TEXT — រន្ទះឆក់
+   ============================================================ */
+@keyframes electric-flicker {
+  0%, 100% {
+    text-shadow:
+      0 0 4px #fff,
+      0 0 11px #fff,
+      0 0 19px #fff,
+      0 0 40px #915EFF,
+      0 0 80px #915EFF,
+      0 0 90px #915EFF,
+      0 0 100px #915EFF,
+      0 0 150px #915EFF;
+    opacity: 1;
+  }
+  10% {
+    text-shadow:
+      0 0 2px #fff,
+      0 0 4px #fff,
+      0 0 6px #fff,
+      0 0 10px #915EFF,
+      0 0 45px #915EFF,
+      0 0 55px #915EFF,
+      0 0 70px #915EFF,
+      0 0 80px #915EFF;
+    opacity: 0.9;
+  }
+  20% {
+    text-shadow:
+      0 0 4px #fff,
+      0 0 10px #fff,
+      0 0 15px #fff,
+      0 0 30px #915EFF,
+      0 0 70px #915EFF,
+      0 0 80px #915EFF,
+      0 0 90px #915EFF,
+      0 0 120px #915EFF;
+    opacity: 1;
+  }
+  30% {
+    text-shadow:
+      0 0 2px #fff,
+      0 0 5px #fff,
+      0 0 8px #fff,
+      0 0 15px #915EFF,
+      0 0 50px #915EFF,
+      0 0 60px #915EFF,
+      0 0 75px #915EFF,
+      0 0 85px #915EFF;
+    opacity: 0.85;
+  }
+  40% {
+    text-shadow:
+      0 0 5px #fff,
+      0 0 12px #fff,
+      0 0 22px #fff,
+      0 0 45px #915EFF,
+      0 0 85px #915EFF,
+      0 0 95px #915EFF,
+      0 0 110px #915EFF,
+      0 0 160px #915EFF;
+    opacity: 1;
+  }
+  50% {
+    text-shadow:
+      0 0 3px #fff,
+      0 0 7px #fff,
+      0 0 12px #fff,
+      0 0 25px #00bfff,
+      0 0 60px #00bfff,
+      0 0 70px #00bfff,
+      0 0 85px #00bfff,
+      0 0 100px #00bfff;
+    opacity: 0.95;
+  }
+  60% {
+    text-shadow:
+      0 0 4px #fff,
+      0 0 11px #fff,
+      0 0 19px #fff,
+      0 0 40px #915EFF,
+      0 0 80px #915EFF,
+      0 0 90px #915EFF,
+      0 0 100px #915EFF,
+      0 0 150px #915EFF;
+    opacity: 1;
+  }
+  70% {
+    text-shadow:
+      0 0 2px #fff,
+      0 0 4px #fff,
+      0 0 6px #fff,
+      0 0 10px #00bfff,
+      0 0 45px #00bfff,
+      0 0 55px #00bfff,
+      0 0 70px #00bfff,
+      0 0 80px #00bfff;
+    opacity: 0.9;
+  }
+  80% {
+    text-shadow:
+      0 0 5px #fff,
+      0 0 12px #fff,
+      0 0 22px #fff,
+      0 0 45px #915EFF,
+      0 0 85px #915EFF,
+      0 0 95px #915EFF,
+      0 0 110px #915EFF,
+      0 0 160px #915EFF;
+    opacity: 1;
+  }
+  90% {
+    text-shadow:
+      0 0 3px #fff,
+      0 0 7px #fff,
+      0 0 12px #fff,
+      0 0 25px #915EFF,
+      0 0 60px #915EFF,
+      0 0 70px #915EFF,
+      0 0 85px #915EFF,
+      0 0 100px #915EFF;
+    opacity: 0.95;
+  }
+}
+
+@keyframes electric-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-2px, 1px) rotate(-0.5deg); }
+  40% { transform: translate(2px, -1px) rotate(0.5deg); }
+  60% { transform: translate(-1px, 2px) rotate(-0.3deg); }
+  80% { transform: translate(1px, -2px) rotate(0.3deg); }
+}
+
+@keyframes bolt-flash {
+  0%, 92%, 100% { opacity: 0; }
+  93%, 95%, 97% { opacity: 1; }
+  94%, 96% { opacity: 0.3; }
+}
+
+.electric-text {
+  position: relative;
   display: inline-block;
+  color: #ffffff;
+  animation:
+    electric-flicker 3s infinite alternate,
+    electric-shake 0.4s infinite;
 }
 
-/* Glass Card */
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1.5rem;
-  transition: all 0.7s cubic-bezier(1.16, 3, 7.3, 1);
-}
-.glass-card:hover {
-  border-color: rgba(0, 191, 255, 0.5);
-  transform: translateY(-4px);
-  box-shadow: 5 20px 35px -12px rgba(0,0,0,0.5);
+.electric-text::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: #915EFF;
+  filter: blur(8px);
+  opacity: 0.6;
+  z-index: -1;
+  animation: electric-flicker 3s infinite alternate-reverse;
 }
 
-/* Lenis Smooth Scroll */
-html.lenis {
-  height: auto;
+.electric-text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: #00bfff;
+  filter: blur(20px);
+  opacity: 0.4;
+  z-index: -2;
+  animation: electric-flicker 3s infinite alternate;
 }
-.lenis.lenis-smooth {
-  scroll-behavior: auto;
+
+.lightning-bolt {
+  position: absolute;
+  width: 2px;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, #00bfff, #ffffff, #915EFF, transparent);
+  box-shadow: 0 0 10px #915EFF, 0 0 20px #915EFF, 0 0 30px #00bfff;
+  opacity: 0;
+  pointer-events: none;
+  animation: bolt-flash 4s infinite;
 }
-/* ========== EFFECT (extra) ========== */
+
+.lightning-bolt:nth-child(1) { top: -20px; left: 10%; animation-delay: 0.5s; transform: rotate(15deg); }
+.lightning-bolt:nth-child(2) { top: -30px; left: 30%; animation-delay: 1.2s; transform: rotate(-10deg); }
+.lightning-bolt:nth-child(3) { top: -15px; left: 55%; animation-delay: 2.0s; transform: rotate(20deg); }
+.lightning-bolt:nth-child(4) { top: -25px; left: 75%; animation-delay: 2.8s; transform: rotate(-15deg); }
+.lightning-bolt:nth-child(5) { top: -10px; left: 90%; animation-delay: 3.5s; transform: rotate(10deg); }
+/* ============================================================
+   ELECTRIC STROKE TEXT — រន្ទះឆក់ដេញតាម outline អក្សរ
+   ============================================================ */
+@keyframes electric-stroke-run {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes electric-stroke-flicker {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(0, 191, 255, 0.8))
+            drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+  }
+  25% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 2px rgba(0, 191, 255, 0.6))
+            drop-shadow(0 0 4px rgba(168, 85, 247, 0.4));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(0, 191, 255, 1))
+            drop-shadow(0 0 12px rgba(168, 85, 247, 0.8));
+  }
+  75% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 3px rgba(0, 191, 255, 0.7))
+            drop-shadow(0 0 6px rgba(168, 85, 247, 0.5));
+  }
+}
+
+/* រន្ទះដេញពីឆ្វេងទៅស្តាំ */
+.electric-stroke-animated {
+  animation: electric-stroke-run 2.5s linear infinite;
+}
+
+/* រន្ទះដេញច្រាសទិស */
+.electric-stroke-animated-reverse {
+  animation: electric-stroke-run 3s linear infinite reverse;
+}
+
+/* Flicker សម្រាប់ SVG ទាំងមូល */
+.electric-stroke-animated,
+.electric-stroke-animated-reverse {
+  animation-name: electric-stroke-run, electric-stroke-flicker;
+  animation-duration: 2.5s, 0.3s;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+}
+
+.electric-stroke-animated-reverse {
+  animation-duration: 3s, 0.4s;
+  animation-direction: reverse, normal;
+}
+/* ============================================================
+   ELECTRIC BORDER — ភ្លើងដេញជុំវិញស៊ុម Product Card
+   ============================================================ */
+@keyframes electric-border-run {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes electric-border-run-reverse {
+  0% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes electric-border-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    filter: blur(4px);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(8px);
+  }
+}
+
+.electric-border-wrapper {
+  position: relative;
+  border-radius: 1rem;
+  isolation: isolate;
+}
+
+/* ស្រទាប់ភ្លើងដេញ (gradient រត់ជុំវិញ) */
+.electric-border-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 1rem;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #00bfff 15%,
+    #a855f7 30%,
+    #ffffff 50%,
+    #a855f7 70%,
+    #00bfff 85%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  z-index: -1;
+  animation: electric-border-run 3s linear infinite;
+  opacity: 0.8;
+  filter: blur(3px);
+}
+
+/* ស្រទាប់ទីពីរ (glow ខ្លាំងជាង) */
+.electric-border-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 1rem;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 191, 255, 0.5) 20%,
+    rgba(168, 85, 247, 0.5) 40%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(168, 85, 247, 0.5) 60%,
+    rgba(0, 191, 255, 0.5) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  z-index: -2;
+  animation: electric-border-run-reverse 4s linear infinite;
+  opacity: 0.6;
+  filter: blur(12px);
+}
+
+/* Hover effect */
+.electric-border-wrapper:hover::before {
+  animation-duration: 1.5s;
+  opacity: 1;
+}
+
+.electric-border-wrapper:hover::after {
+  animation-duration: 2s;
+  opacity: 0.9;
+}
+
+/* សម្រាប់ card ខាងក្នុង */
+.electric-border-inner {
+  position: relative;
+  border-radius: 1rem;
+  background: rgba(10, 10, 12, 0.95);
+  overflow: hidden;
+  z-index: 1;
+}
+/* ============================================================
+   GRADIENT BORDER — បន្ទាត់ពណ៌រត់ជុំវិញស៊ុម (mr7.ai style)
+   ============================================================ */
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gradient-rotate {
+  0% {
+    --gradient-angle: 0deg;
+  }
+  100% {
+    --gradient-angle: 360deg;
+  }
+}
+
+@keyframes gradient-rotate-reverse {
+  0% {
+    --gradient-angle: 360deg;
+  }
+  100% {
+    --gradient-angle: 0deg;
+  }
+}
+
+/* ស៊ុម gradient រត់ */
+.gradient-border {
+  position: relative;
+  border-radius: 1.25rem;
+  background: rgba(10, 10, 12, 0.85);
+  isolation: isolate;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 1.25rem;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    transparent 0%,
+    #00bfff 15%,
+    #a855f7 30%,
+    #ffffff 45%,
+    #a855f7 55%,
+    #00bfff 70%,
+    transparent 85%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: gradient-rotate 4s linear infinite;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ស្រទាប់ glow ខាងក្រោយ */
+.gradient-border::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 1.25rem;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    transparent 0%,
+    rgba(0, 191, 255, 0.3) 15%,
+    rgba(168, 85, 247, 0.3) 30%,
+    rgba(255, 255, 255, 0.4) 45%,
+    rgba(168, 85, 247, 0.3) 55%,
+    rgba(0, 191, 255, 0.3) 70%,
+    transparent 85%,
+    transparent 100%
+  );
+  filter: blur(8px);
+  animation: gradient-rotate 4s linear infinite;
+  z-index: -2;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* សម្រាប់ hover */
+.gradient-border:hover::before {
+  animation-duration: 1.5s;
+}
+
+.gradient-border:hover::after {
+  opacity: 1;
+  animation-duration: 2s;
+}
+
+/* Slow variant សម្រាប់ card ធំ */
+.gradient-border-slow::before {
+  animation: gradient-rotate 8s linear infinite;
+}
+
+.gradient-border-slow::after {
+  animation: gradient-rotate 8s linear infinite;
+}
+
+/* សម្រាប់ Featured Project card */
+.project-card-inner {
+  position: relative;
+  border-radius: 1.25rem;
+  background: rgba(10, 10, 12, 0.95);
+  padding: 2rem;
+  z-index: 1;
+}
+
+/* សម្រាប់ Terms card */
+.terms-card-inner {
+  position: relative;
+  border-radius: 1.25rem;
+  background: rgba(10, 10, 12, 0.95);
+  padding: 2rem;
+  z-index: 1;
+}
+@keyframes electricPulse {
+  0% {
+    box-shadow: 0 0 5px #00bfff, 0 0 10px #00bfff, inset 0 0 5px #00bfff;
+    border-color: #00bfff;
+  }
+  50% {
+    box-shadow: 0 0 15px #a855f7, 0 0 25px #00bfff, inset 0 0 10px #a855f7;
+    border-color: #a855f7;
+  }
+  100% {
+    box-shadow: 0 0 5px #00bfff, 0 0 10px #00bfff, inset 0 0 5px #00bfff;
+    border-color: #00bfff;
+  }
+}
+
+.electric-outline {
+  border: 2px solid #00bfff;
+  animation: electricPulse 2s infinite ease-in-out;
+}
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-33.333%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+/* ពេលເອົາ Mouse ទៅတို့អោយវាឈប់សិនក៏បាន (Optional) */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
